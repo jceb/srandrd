@@ -10,12 +10,6 @@
 #include <fcntl.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
-static const char *vers[][2] = { 
-  {"This is", NAME}, {"Version", VERSION}, 
-  {"Builddate", __DATE__" "__TIME__}, 
-  {"Copyright", COPYRIGHT}, {"License", LICENSE}, 
-  { NULL, NULL }
-};
 
 static void 
 error(const char *format, ...) {
@@ -45,8 +39,11 @@ help(void) {
 }
 static void 
 version(void) {
-  for (int i=0; vers[i][0] != NULL; i++) 
-    fprintf(stderr, "%12s : %s\n", vers[i][0], vers[i][1]);
+  fprintf(stderr, "    This is : "NAME"\n"
+                  "    Version : "VERSION"\n"
+                  "  Builddate : "__DATE__" "__TIME__"\n"
+                  "  Copyright : "COPYRIGHT"\n"
+                  "    License : "LICENSE"\n");
   exit(EXIT_SUCCESS);
 }
 int 
