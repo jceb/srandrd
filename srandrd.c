@@ -13,8 +13,6 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 
-Display *dpy;
-
 void 
 error(const char *format, ...) {
   va_list args;
@@ -37,25 +35,27 @@ catch_child(int sig) {
 void setup(char **argv) {
   pid_t pid;
   XEvent ev;
-  pid = fork();
-  if (pid < 0) 
-    error("Could not fork");
-  if (pid > 0)
-    exit(EXIT_SUCCESS);
+  Display *dpy;
+
+  switch(fork()) {
+    case -1 : error("Could not fork");
+    case 0  : break;
+    default : exit(EXIT_SUCCESS);
+  }
 
   setsid();
 
   if (chdir("/") < 0) 
     error("Changing working directory failed");
 
+  dpy = XOpenDisplay(NULL);
+  if (dpy == NULL)
+    error("Cannot open display\n");
+
   close(STDIN_FILENO);
   close(STDERR_FILENO);
   close(STDOUT_FILENO);
   signal(SIGCHLD, catch_child);
-
-  dpy = XOpenDisplay(NULL);
-  if (dpy == NULL)
-    error("Cannot open display");
 
   XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
   XSync(dpy, False);
