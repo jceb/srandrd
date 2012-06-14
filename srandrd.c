@@ -33,7 +33,6 @@ catch_child(int sig) {
   while ( (pid = waitpid(-1, NULL, WNOHANG) > 0));
 }
 void setup(char **argv) {
-  pid_t pid;
   XEvent ev;
   Display *dpy;
 
