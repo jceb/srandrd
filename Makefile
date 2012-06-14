@@ -12,7 +12,7 @@ INSTALLDIR	:= $(DESTDIR)$(PREFIX)
 MANPREFIX		?= $(PREFIX)/share/man
 MANPREFIX		:= $(DESTDIR)$(MANPREFIX)
 
-CFLAGS		:= -Wall -Os -pedantic #-Werror -Wextra
+CFLAGS		:= -Wall -Os -pedantic -std=c99 #-Werror -Wextra
 CPPFLAGS  += -DNAME=\"$(TARGET)\" -DVERSION=\"$(VERSION)\" 
 CPPFLAGS	+= -DCOPYRIGHT=\"$(COPYRIGHT)\" -DLICENSE=\"$(LICENSE)\"
 LDFLAGS		:= -lX11 -lXrandr

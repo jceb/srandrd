@@ -25,7 +25,7 @@ error(const char *format, ...) {
 }
 static int 
 error_handler() {
-  exit(EXIT_SUCCESS);
+  exit(EXIT_FAILURE);
 }
 static void 
 catch_child(int sig) {
@@ -37,14 +37,13 @@ help(void) {
   fprintf(stderr, "Usage: "NAME" [option] command\n\n"
       "Options:\n"
       "   -h  Print this help and exit\n" 
-      "   -n  Dont fork to background\n" 
+      "   -n  Don't fork to background\n" 
       "   -V  Print version information and exit\n");
   exit(EXIT_SUCCESS);
 }
 static void 
 version(void) {
-  int i;
-  for (i=0; vers[i][0] != NULL; i++) 
+  for (int i=0; vers[i][0] != NULL; i++) 
     fprintf(stderr, "%12s : %s\n", vers[i][0], vers[i][1]);
   exit(EXIT_SUCCESS);
 }
@@ -55,7 +54,6 @@ main(int argc, char **argv) {
   int daemonize = 1, args = 1;
   uid_t uid;
 
-  /* Parse options */
   if (argc < 2) 
     help();
   if (*(argv[1]) == '-') {
@@ -68,15 +66,15 @@ main(int argc, char **argv) {
       default : help(); 
     }
   }
-  /* Check root */
-  uid = getuid();
-  if ((uid = getuid() == 0) || uid != geteuid()) 
+  if (argv[args] == NULL)
+    help();
+
+  if (((uid = getuid()) == 0) || uid != geteuid()) 
     error("%s may not run as root\n", NAME);
 
   if ((dpy = XOpenDisplay(NULL)) == NULL)
     error("Cannot open display\n");
 
-  /* daemonize */
   if (daemonize) {
     switch(fork()) {
       case -1 : error("Could not fork\n");
@@ -94,7 +92,6 @@ main(int argc, char **argv) {
   XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
   XSync(dpy, False);
   XSetIOErrorHandler((XIOErrorHandler) error_handler);
-  /* Main event loop */
   while(1) {
     if (!XNextEvent(dpy, &ev)) {
       if (fork() == 0) {
