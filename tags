@@ -1,0 +1,13 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+catch_child	srandrd.c	/^catch_child(int sig) {$/;"	f
+dpy	srandrd.c	/^Display *dpy;$/;"	v
+error	srandrd.c	/^error(const char *format, ...) {$/;"	f
+error_handler	srandrd.c	/^error_handler() {$/;"	f	file:
+help	srandrd.c	/^help(char *name) {$/;"	f
+main	srandrd.c	/^int main(int argc, char **argv) {$/;"	f
+setup	srandrd.c	/^void setup(char **argv) {$/;"	f
