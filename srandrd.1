@@ -31,10 +31,26 @@
 srandrd \- simple randr daemon
 .SH "SYNOPSIS"
 .sp
-\fBsrandrd\fR \fICOMMAND\fR
+\fBsrandrd\fR [\fIOPTIONS\fR] \fICOMMAND\fR
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Print help and exit
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+Don\(cqt fork to background
+.RE
+.PP
+\fB\-V\fR
+.RS 4
+Show version info and exit
+.RE
 .SH "DESCRIPTION"
 .sp
-srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. srandrd runs as a daemon and exits if the xserver exits\&.
+srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&.
 .SH "RESOURCES"
 .sp
 bitbucket: http://bitbucket\&.org/portix/srandrd

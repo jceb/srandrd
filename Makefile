@@ -1,31 +1,41 @@
 #See LICENSE for copyright and license details
 
-TARGET 	= srandrd
-SOURCE 	= srandrd.c
+TARGET			:= srandrd
+SOURCE			:= srandrd.c
+VERSION			:= 0.0
+COPYRIGHT		:= "(C) 2012 Stefan Bolte"
+LICENSE			:= "MIT/X Consortium"
 
-PREFIX 			?= /usr
-INSTALLDIR 	:= $(DESTDIR)$(PREFIX)
+PREFIX			?= /usr
+INSTALLDIR	:= $(DESTDIR)$(PREFIX)
 
-MANPREFIX 	?= $(PREFIX)/share/man
-MANPREFIX 	:= $(DESTDIR)$(MANPREFIX)
+MANPREFIX		?= $(PREFIX)/share/man
+MANPREFIX		:= $(DESTDIR)$(MANPREFIX)
 
-CFLAGS 	:= -Wall -Os -pedantic -Werror -Wextra
-LDFLAGS := -lX11 -lXrandr
+CFLAGS		:= -Wall -Os -pedantic #-Werror -Wextra
+CPPFLAGS  += -DNAME=\"$(TARGET)\" -DVERSION=\"$(VERSION)\" 
+CPPFLAGS	+= -DCOPYRIGHT=\"$(COPYRIGHT)\" -DLICENSE=\"$(LICENSE)\"
+LDFLAGS		:= -lX11 -lXrandr
 
-all: $(TARGET)
+all: options $(TARGET)
 
 $(TARGET): $(SOURCE)
-	$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS) $(CPPFLAGS)
+	@echo "$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS)"
+	@$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS) $(CPPFLAGS)
 
 install: 
-	install -d $(INSTALLDIR)/bin
-	install -m 755 $(TARGET) $(INSTALLDIR)/bin/
-	install -d $(MANPREFIX)/man1
-	install -m 644 $(TARGET).1 $(MANPREFIX)/man1
+	@echo Installing executable to $(INSTALLDIR)/bin
+	@install -d $(INSTALLDIR)/bin
+	@install -m 755 $(TARGET) $(INSTALLDIR)/bin/
+	@echo Installing manpage to $(MANPREFIX)/man1
+	@install -d $(MANPREFIX)/man1
+	@install -m 644 $(TARGET).1 $(MANPREFIX)/man1
 
 uninstall: 
-	$(RM) $(INSTALLDIR)/bin/$(TARGET)
-	$(RM) $(MANPREFIX)/man1/$(TARGET).1
+	@echo Removing executable to $(INSTALLDIR)/bin
+	@rm -f $(INSTALLDIR)/bin/$(TARGET)
+	@echo Removing manpage from $(INSTALLDIR)/bin
+	@rm -f $(MANPREFIX)/man1/$(TARGET).1
 
 clean: 
 	$(RM) $(TARGET)
@@ -35,4 +45,4 @@ doc: srandrd.1
 srandrd.1: srandrd.1.txt 
 	a2x --doctype manpage --format manpage $<
 
-.PHONY: all clean install uninstall
+.PHONY: all options clean install uninstall
