@@ -13,7 +13,7 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 
-void 
+static void 
 error(const char *format, ...) {
   va_list args;
   va_start(args, format);
@@ -26,18 +26,19 @@ error_handler() {
   exit(EXIT_SUCCESS);
   return 0;
 }
-void 
+static void 
 catch_child(int sig) {
   pid_t pid;
   (void)sig;
   while ( (pid = waitpid(-1, NULL, WNOHANG) > 0));
 }
-void setup(char **argv) {
+static void 
+setup(char **argv) {
   XEvent ev;
   Display *dpy;
 
   switch(fork()) {
-    case -1 : error("Could not fork");
+    case -1 : error("Could not fork\n");
     case 0  : break;
     default : exit(EXIT_SUCCESS);
   }
@@ -47,8 +48,7 @@ void setup(char **argv) {
   if (chdir("/") < 0) 
     error("Changing working directory failed");
 
-  dpy = XOpenDisplay(NULL);
-  if (dpy == NULL)
+  if ((dpy = XOpenDisplay(NULL)) == NULL)
     error("Cannot open display\n");
 
   close(STDIN_FILENO);
@@ -75,7 +75,8 @@ help(char *name) {
   fprintf(stderr, "Usage: %s command\n", name);
   exit(EXIT_SUCCESS);
 }
-int main(int argc, char **argv) {
+int 
+main(int argc, char **argv) {
   uid_t uid, euid;
   uid = getuid();
   if (argc < 2) 
@@ -86,5 +87,5 @@ int main(int argc, char **argv) {
   if (euid != uid)
     error("Effective uid and uid differ\n", argv[0]);
   setup(argv);
-  exit(EXIT_SUCCESS);
+  return 0;
 }
