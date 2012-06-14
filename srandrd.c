@@ -11,8 +11,10 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 static const char *vers[][2] = { 
-  {"This is", NAME}, {"Version", VERSION}, {"Builddate", __DATE__" "__TIME__}, 
-  {"Copyright", COPYRIGHT}, {"License", LICENSE}, { NULL, NULL }
+  {"This is", NAME}, {"Version", VERSION}, 
+  {"Builddate", __DATE__" "__TIME__}, 
+  {"Copyright", COPYRIGHT}, {"License", LICENSE}, 
+  { NULL, NULL }
 };
 
 static void 
@@ -59,10 +61,8 @@ main(int argc, char **argv) {
   if (*(argv[1]) == '-') {
     args++; 
     switch(argv[1][1]) {
-      case 'V' : version(); 
-                 return 0;
-      case 'n' : daemonize = 0; 
-                 break;
+      case 'V' : version();     
+      case 'n' : daemonize = 0; break;
       default : help(); 
     }
   }
@@ -102,5 +102,5 @@ main(int argc, char **argv) {
       }
     }
   }
-  return 0;
+  return EXIT_SUCCESS;
 }
