@@ -2,9 +2,11 @@
 
 TARGET			:= srandrd
 SOURCE			:= srandrd.c
-VERSION			:= 0.0
+VERSION			:= 0.1
 COPYRIGHT		:= "(C) 2012 Stefan Bolte"
 LICENSE			:= "MIT/X Consortium"
+
+DISTDIR 		:= $(TARGET)-$(VERSION)
 
 PREFIX			?= /usr
 INSTALLDIR	:= $(DESTDIR)$(PREFIX)
@@ -17,10 +19,10 @@ CPPFLAGS  += -DNAME=\"$(TARGET)\" -DVERSION=\"$(VERSION)\"
 CPPFLAGS	+= -DCOPYRIGHT=\"$(COPYRIGHT)\" -DLICENSE=\"$(LICENSE)\"
 LDFLAGS		:= -lX11 -lXrandr
 
-all: options $(TARGET)
+all: $(TARGET)
 
 $(TARGET): $(SOURCE)
-	@echo "$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS)"
+	@echo $(CC) -o $@ $< $(CFLAGS) $(LDFLAGS)
 	@$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS) $(CPPFLAGS)
 
 install: 
@@ -45,4 +47,8 @@ doc: srandrd.1
 srandrd.1: srandrd.1.txt 
 	a2x --doctype manpage --format manpage $<
 
-.PHONY: all options clean install uninstall
+dist: 
+	@echo "Creating tarball."
+	@hg archive -t tgz $(DISTDIR).tar.gz
+
+.PHONY: all options clean install uninstall dist

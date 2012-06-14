@@ -1,7 +1,7 @@
 # Contributor: portix <portix@gmx.net>
 
 pkgname=srandrd-hg
-pkgver=8
+pkgver=12
 pkgrel=1
 pkgdesc="Simple randr hotplug daemon"
 url="http://bitbucket.org/portix/srandrd"
