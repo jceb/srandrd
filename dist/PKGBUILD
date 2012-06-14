@@ -8,7 +8,7 @@ url="http://bitbucket.org/portix/srandrd"
 arch=('i686' 'x86_64')
 license=('MIT')
 depends=('libx11' 'libxrandr')
-makedepends('mercurial')
+makedepends=('mercurial')
 
 _hgroot="https://bitbucket.org/portix"
 _hgrepo="srandrd"
