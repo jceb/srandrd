@@ -1,6 +1,6 @@
 srandrd - simple randr daemon 
 
-srandrd is a simple daemon that simply does an action when a the output changes,
+srandrd is a simple daemon that executes one command when the output changes,
 e.g. a Monitor is plugged or unplugged.
 
 USAGE: 
