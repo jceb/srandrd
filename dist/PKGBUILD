@@ -1,0 +1,22 @@
+# Contributor: portix <portix@gmx.net>
+
+pkgname=srandrd-hg
+pkgver=0
+pkgrel=1
+pkgdesc="Simple randr hotplug daemon"
+url="http://bitbucket.org/portix/srandrd"
+arch=('i686' 'x86_64')
+license=('MIT')
+depends=('libx11' 'libxrandr')
+
+_hgroot="https://bitbucket.org/portix"
+_hgrepo="srandrd"
+
+build() {
+  cd ${srcdir}/${_hgrepo}
+  make 
+}
+package() {
+  cd ${srcdir}/${_hgrepo}
+  make DESTDIR=${pkgdir} install 
+}
