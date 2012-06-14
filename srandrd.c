@@ -34,11 +34,11 @@ catch_child(int sig) {
 }
 static void 
 help(void) {
-  fprintf(stderr, "Usage: "NAME" [-V|-n] command\n\n"
+  fprintf(stderr, "Usage: "NAME" [option] command\n\n"
       "Options:\n"
       "   -h  Print this help and exit\n" 
       "   -n  Dont fork to background\n" 
-      "   -V  Print version info and exit\n");
+      "   -V  Print version information and exit\n");
   exit(EXIT_SUCCESS);
 }
 static void 
