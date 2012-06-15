@@ -3,7 +3,7 @@
 pkgname=srandrd
 pkgver=0.1
 pkgrel=1
-pkgdesc="A webkit web browser with vi-like keyboard shortcuts, stable snapshot" 
+pkgdesc="Simple randr daemon that reacts to monitor hotplug events" 
 url="http://bitbucket.org/portix/srandrd/"
 arch=('i686' 'x86_64')
 license=('GPL')
