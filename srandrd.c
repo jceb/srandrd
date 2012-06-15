@@ -12,7 +12,7 @@
 #include <X11/extensions/Xrandr.h>
 
 static void 
-error(const char *format, ...) {
+xerror(const char *format, ...) {
   va_list args;
   va_start(args, format);
   vfprintf(stderr, format, args);
@@ -67,14 +67,14 @@ main(int argc, char **argv) {
     help();
 
   if (((uid = getuid()) == 0) || uid != geteuid()) 
-    error("%s may not run as root\n", NAME);
+    xerror("%s may not run as root\n", NAME);
 
   if ((dpy = XOpenDisplay(NULL)) == NULL)
-    error("Cannot open display\n");
+    xerror("Cannot open display\n");
 
   if (daemonize) {
     switch(fork()) {
-      case -1 : error("Could not fork\n");
+      case -1 : xerror("Could not fork\n");
       case 0  : break;
       default : exit(EXIT_SUCCESS);
     }
