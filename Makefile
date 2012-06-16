@@ -2,7 +2,7 @@
 
 TARGET			:= srandrd
 SOURCE			:= srandrd.c
-VERSION			:= 0.1
+VERSION			:= 0.1.1
 COPYRIGHT		:= "(C) 2012 Stefan Bolte"
 LICENSE			:= "MIT/X Consortium"
 
@@ -34,7 +34,7 @@ install:
 	@install -m 644 $(TARGET).1 $(MANPREFIX)/man1
 
 uninstall: 
-	@echo Removing executable to $(INSTALLDIR)/bin
+	@echo Removing executable from $(INSTALLDIR)/bin
 	@rm -f $(INSTALLDIR)/bin/$(TARGET)
 	@echo Removing manpage from $(INSTALLDIR)/bin
 	@rm -f $(MANPREFIX)/man1/$(TARGET).1
