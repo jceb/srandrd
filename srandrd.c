@@ -20,7 +20,7 @@ xerror(const char *format, ...) {
   exit(EXIT_FAILURE);
 }
 static int 
-error_handler() {
+error_handler(void) {
   exit(EXIT_FAILURE);
 }
 static void 
