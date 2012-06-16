@@ -1,0 +1,22 @@
+# Contributor: portix <portix at gmx.net>
+
+pkgname=srandrd
+pkgver=0.1.1
+pkgrel=1
+pkgdesc="Simple randr daemon that reacts to monitor hotplug events" 
+url="http://bitbucket.org/portix/srandrd/"
+arch=('i686' 'x86_64')
+license=('GPL')
+depends=('libx11' 'libxrandr')
+conflicts=('srandrd-hg')
+source=(https://bitbucket.org/portix/${pkgname}/downloads/${pkgname}-${pkgver}.tar.gz)
+md5sums=('5b98a89c7bbc8433d68a959b7466dd2d')
+
+build() {
+  cd ${srcdir}/${pkgname}-${pkgver}
+  make
+}
+package() {
+  cd ${srcdir}/${pkgname}-${pkgver}
+  make DESTDIR=${pkgdir} install
+}
