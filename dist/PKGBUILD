@@ -6,7 +6,7 @@ pkgrel=2
 pkgdesc="Simple randr daemon that reacts to monitor hotplug events" 
 url="http://portix.bitbucket.org/srandrd/"
 arch=('i686' 'x86_64')
-license=('GPL')
+license=('custom:MIT/X')
 depends=('libx11' 'libxrandr')
 conflicts=('srandrd-hg')
 source=(https://bitbucket.org/portix/${pkgname}/downloads/${pkgname}-${pkgver}.tar.gz)
@@ -19,4 +19,5 @@ build() {
 package() {
   cd ${srcdir}/${pkgname}-${pkgver}
   make DESTDIR=${pkgdir} install
+  install -m644 -D LICENSE $pkgdir/usr/share/licenses/$pkgname/LICENSE
 }
