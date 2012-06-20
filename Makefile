@@ -2,7 +2,7 @@
 
 TARGET			:= srandrd
 SOURCE			:= srandrd.c
-VERSION			:= 0.1.1
+VERSION			:= 0.2
 COPYRIGHT		:= "(C) 2012 Stefan Bolte"
 LICENSE			:= "MIT/X Consortium"
 
@@ -15,8 +15,10 @@ MANPREFIX		?= $(PREFIX)/share/man
 MANPREFIX		:= $(DESTDIR)$(MANPREFIX)
 
 CFLAGS		:= -Wall -Os -pedantic -std=c99 #-Werror -Wextra
+CPPFLAGS  += -D_BSD_SOURCE -D_XOPEN_SOURCE=600
 CPPFLAGS  += -DNAME=\"$(TARGET)\" -DVERSION=\"$(VERSION)\" 
 CPPFLAGS	+= -DCOPYRIGHT=\"$(COPYRIGHT)\" -DLICENSE=\"$(LICENSE)\"
+
 LDFLAGS		:= -lX11 -lXrandr
 
 all: $(TARGET)
