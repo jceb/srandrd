@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: srandrd
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 06/15/2012
+.\" Generator: DocBook XSL Stylesheets v1.77.0 <http://docbook.sf.net/>
+.\"      Date: 06/20/2012
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "SRANDRD" "1" "06/15/2012" "\ \&" "\ \&"
+.TH "SRANDRD" "1" "06/20/2012" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -50,7 +50,47 @@ Show version information and exit
 .RE
 .SH "DESCRIPTION"
 .sp
-srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&.
+srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&. In the childs environment the environment variable \fISRANDRD_ACTION\fR is set which is of the format
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+DISPLAYNAME [connected|disconnected|unknown]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXAMPLE"
+.sp
+An example usage could be
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+srandrd display_handler
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+where display_handler being the following script
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#!/bin/sh
+
+case "$SRANDRD_ACTION" in
+  "DVI\-0 connected") xrandr \-\-output DVI\-0 \-\-auto \-\-right\-of LVDS
+  "VGA\-0 connected") xrandr \-\-output VGA\-0 \-\-auto \-\-left\-of LVDS
+esac
+.fi
+.if n \{\
+.RE
+.\}
 .SH "RESOURCES"
 .sp
 bitbucket: http://bitbucket\&.org/portix/srandrd
