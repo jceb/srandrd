@@ -2,6 +2,7 @@
  * srandrd - simple randr daemon
  */
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -10,6 +11,11 @@
 #include <fcntl.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
+
+#define OCNE(X) ((XRROutputChangeNotifyEvent*)X)
+#define BUFFER_SIZE 128
+
+char *con_actions[] = { "connected", "disconnected", "unknown" };
 
 static void 
 xerror(const char *format, ...) {
@@ -29,13 +35,13 @@ catch_child(int sig) {
   while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 static void 
-help(void) {
+help(int status) {
   fprintf(stderr, "Usage: "NAME" [option] command\n\n"
       "Options:\n"
       "   -h  Print this help and exit\n" 
       "   -n  Don't fork to background\n" 
       "   -V  Print version information and exit\n");
-  exit(EXIT_SUCCESS);
+  exit(status);
 }
 static void 
 version(void) {
@@ -51,20 +57,22 @@ main(int argc, char **argv) {
   XEvent ev;
   Display *dpy;
   int daemonize = 1, args = 1;
+  char buf[BUFFER_SIZE];
   uid_t uid;
 
   if (argc < 2) 
-    help();
+    help(EXIT_FAILURE);
   if (*(argv[1]) == '-') {
-    args++; 
+    args++;
     switch(argv[1][1]) {
       case 'V' : version();     
       case 'n' : daemonize = 0; break;
-      default : help(); 
+      case 'h' : help(EXIT_SUCCESS);
+      default  : help(EXIT_FAILURE);
     }
   }
   if (argv[args] == NULL)
-    help();
+    help(EXIT_FAILURE);
 
   if (((uid = getuid()) == 0) || uid != geteuid()) 
     xerror("%s may not run as root\n", NAME);
@@ -91,12 +99,21 @@ main(int argc, char **argv) {
   XSetIOErrorHandler((XIOErrorHandler) error_handler);
   while(1) {
     if (!XNextEvent(dpy, &ev)) {
+      XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
+          OCNE(&ev)->window);
+      XRROutputInfo *info = XRRGetOutputInfo(OCNE(&ev)->display, resources,
+          OCNE(&ev)->output);
+      snprintf(buf, BUFFER_SIZE, "%s %s", info->name,
+          con_actions[info->connection]);
       if (fork() == 0) {
         if (dpy)
           close(ConnectionNumber(dpy));
         setsid();
+        setenv("SRANDRD_ACTION", buf, False);
         execvp(argv[args], &(argv[args]));
       }
+      XRRFreeScreenResources(resources);
+      XRRFreeOutputInfo(info);
     }
   }
   return EXIT_SUCCESS;
