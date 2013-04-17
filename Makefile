@@ -2,7 +2,7 @@
 
 TARGET			:= srandrd
 SOURCE			:= srandrd.c
-VERSION			:= 0.2
+VERSION			:= 0.3
 COPYRIGHT		:= "(C) 2012 Stefan Bolte"
 LICENSE			:= "MIT/X Consortium"
 
