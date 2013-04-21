@@ -124,6 +124,7 @@ main(int argc, char **argv)
                     OCNE(&ev)->output);
             if (info == NULL)
             {
+                XRRFreeScreenResources(resources);
                 fprintf(stderr, "Could not get output info\n");
                 continue;
             }
