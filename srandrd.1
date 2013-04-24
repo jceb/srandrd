@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: srandrd
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.77.0 <http://docbook.sf.net/>
-.\"      Date: 06/20/2012
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 04/24/2013
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "SRANDRD" "1" "06/20/2012" "\ \&" "\ \&"
+.TH "SRANDRD" "1" "04/24/2013" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -84,8 +84,8 @@ where display_handler being the following script
 #!/bin/sh
 
 case "$SRANDRD_ACTION" in
-  "DVI\-0 connected") xrandr \-\-output DVI\-0 \-\-auto \-\-right\-of LVDS
-  "VGA\-0 connected") xrandr \-\-output VGA\-0 \-\-auto \-\-left\-of LVDS
+  "DVI\-0 connected") xrandr \-\-output DVI\-0 \-\-auto \-\-right\-of LVDS;;
+  "VGA\-0 connected") xrandr \-\-output VGA\-0 \-\-auto \-\-left\-of LVDS;;
 esac
 .fi
 .if n \{\
