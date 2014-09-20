@@ -18,8 +18,7 @@
 char *con_actions[] = { "connected", "disconnected", "unknown" };
 
 static void 
-xerror(const char *format, ...) 
-{
+xerror(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -27,19 +26,16 @@ xerror(const char *format, ...)
     exit(EXIT_FAILURE);
 }
 static int 
-error_handler(void) 
-{
+error_handler(void) {
     exit(EXIT_FAILURE);
 }
 static void 
-catch_child(int sig) 
-{
+catch_child(int sig) {
     (void)sig;
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 static void 
-help(int status) 
-{
+help(int status) {
     fprintf(stderr, "Usage: "NAME" [option] command\n\n"
             "Options:\n"
             "   -h  Print this help and exit\n" 
@@ -48,8 +44,7 @@ help(int status)
     exit(status);
 }
 static void 
-version(void) 
-{
+version(void) {
   fprintf(stderr, "    This is : "NAME"\n"
                   "    Version : "VERSION"\n"
                   "  Builddate : "__DATE__" "__TIME__"\n"
@@ -58,24 +53,21 @@ version(void)
   exit(EXIT_SUCCESS);
 }
 int 
-main(int argc, char **argv) 
-{
+main(int argc, char **argv) {
     XEvent ev;
     Display *dpy;
-    int daemonize = 1, args = 1;
+    int daemonize = 1, args = 1, verbose = 0;
     char buf[BUFFER_SIZE];
     uid_t uid;
 
     if (argc < 2) 
         help(EXIT_FAILURE);
 
-    if (*(argv[1]) == '-') 
-    {
-        args++;
-        switch(argv[1][1]) 
-        {
+    for (args = 1; args < argc && *(argv[args]) == '-'; args++) {
+        switch(argv[args][1]) {
             case 'V' : version();     
             case 'n' : daemonize = 0; break;
+            case 'v' : verbose++; break;
             case 'h' : help(EXIT_SUCCESS);
             default  : help(EXIT_FAILURE);
         }
@@ -89,10 +81,8 @@ main(int argc, char **argv)
     if ((dpy = XOpenDisplay(NULL)) == NULL)
         xerror("Cannot open display\n");
 
-    if (daemonize) 
-    {
-        switch(fork()) 
-        {
+    if (daemonize) {
+        switch(fork()) {
             case -1 : xerror("Could not fork\n");
             case 0  : break;
             default : exit(EXIT_SUCCESS);
@@ -108,31 +98,46 @@ main(int argc, char **argv)
     XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
     XSync(dpy, False);
     XSetIOErrorHandler((XIOErrorHandler) error_handler);
-    while(1) 
-    {
-        if (!XNextEvent(dpy, &ev)) 
-        {
+    while(1) {
+        if (!XNextEvent(dpy, &ev)) {
             XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
                     OCNE(&ev)->window);
-            if (resources == NULL)
-            {
+            if (resources == NULL) {
                 fprintf(stderr, "Could not get screen resources\n");
                 continue;
             }
 
             XRROutputInfo *info = XRRGetOutputInfo(OCNE(&ev)->display, resources,
                     OCNE(&ev)->output);
-            if (info == NULL)
-            {
+            if (info == NULL) {
                 XRRFreeScreenResources(resources);
                 fprintf(stderr, "Could not get output info\n");
+                continue;
+            }
+            if ((info->connection == RR_Connected && info->crtc != 0) || 
+                    (info->connection == RR_Disconnected && info->crtc == 0)) {
                 continue;
             }
 
             snprintf(buf, BUFFER_SIZE, "%s %s", info->name,
                     con_actions[info->connection]);
-            if (fork() == 0) 
-            {
+            if (verbose) {
+                printf("Event: %s %s\n", info->name,
+                        con_actions[info->connection]);
+                printf("Time: %lu\n", info->timestamp);
+                if (info->crtc == 0) {
+                    printf("Size: %lumm x %lumm\n", info->mm_width, info->mm_height);
+                }
+                else {
+                    printf("CRTC: %lu\n", info->crtc);
+                    XRRCrtcInfo *crtc = XRRGetCrtcInfo(dpy, resources, info->crtc);
+                    if (crtc != NULL) {
+                        printf("Size: %dx%d\n", crtc->width, crtc->height);
+                        XRRFreeCrtcInfo(crtc);
+                    }
+                }
+            }
+            if (fork() == 0) {
                 if (dpy)
                     close(ConnectionNumber(dpy));
                 setsid();

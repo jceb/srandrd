@@ -2,8 +2,8 @@
 
 TARGET			:= srandrd
 SOURCE			:= srandrd.c
-VERSION			:= 0.3
-COPYRIGHT		:= "(C) 2012-2013 Stefan Bolte"
+VERSION			:= 0.4
+COPYRIGHT		:= "(C) 2012-2014 Stefan Bolte"
 LICENSE			:= "MIT/X Consortium"
 
 DISTDIR 		:= $(TARGET)-$(VERSION)
