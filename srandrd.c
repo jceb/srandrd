@@ -114,10 +114,6 @@ main(int argc, char **argv) {
                 fprintf(stderr, "Could not get output info\n");
                 continue;
             }
-            if ((info->connection == RR_Connected && info->crtc != 0) || 
-                    (info->connection == RR_Disconnected && info->crtc == 0)) {
-                continue;
-            }
 
             snprintf(buf, BUFFER_SIZE, "%s %s", info->name,
                     con_actions[info->connection]);
