@@ -1,22 +1,22 @@
 #See LICENSE for copyright and license details
 
-TARGET			:= srandrd
-SOURCE			:= srandrd.c
-VERSION			:= 0.4
-COPYRIGHT		:= "(C) 2012-2014 Stefan Bolte"
-LICENSE			:= "MIT/X Consortium"
+TARGET		:= srandrd
+SOURCE		:= srandrd.c
+VERSION		:= 0.4
+COPYRIGHT	:= "(C) 2012-2014 Stefan Bolte"
+LICENSE		:= "MIT/X Consortium"
 
-DISTDIR 		:= $(TARGET)-$(VERSION)
+DISTDIR 	:= $(TARGET)-$(VERSION)
 
-PREFIX			?= /usr
+PREFIX		?= /usr
 INSTALLDIR	:= $(DESTDIR)$(PREFIX)
 
-MANPREFIX		?= $(PREFIX)/share/man
-MANPREFIX		:= $(DESTDIR)$(MANPREFIX)
+MANPREFIX	?= $(PREFIX)/share/man
+MANPREFIX	:= $(DESTDIR)$(MANPREFIX)
 
 CFLAGS		:= -Wall -Os -pedantic -std=c99 #-Werror -Wextra
-CPPFLAGS  += -D_DEFAULT_SOURCE
-CPPFLAGS  += -DNAME=\"$(TARGET)\" -DVERSION=\"$(VERSION)\"
+CPPFLAGS	+= -D_DEFAULT_SOURCE
+CPPFLAGS	+= -DNAME=\"$(TARGET)\" -DVERSION=\"$(VERSION)\"
 CPPFLAGS	+= -DCOPYRIGHT=\"$(COPYRIGHT)\" -DLICENSE=\"$(LICENSE)\"
 
 LDFLAGS		:= -lX11 -lXrandr
