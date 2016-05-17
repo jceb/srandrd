@@ -54,6 +54,6 @@ srandrd.1: srandrd.1.txt
 
 dist:
 	@echo "Creating tarball."
-	@hg archive -t tgz -X dist $(DISTDIR).tar.gz
+	@git archive --format=tar.gz --prefix $(DISTDIR)/ -o $(DISTDIR).tar.gz HEAD
 
 .PHONY: all options clean install uninstall dist
