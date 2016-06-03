@@ -19,7 +19,9 @@ OPTIONS
 *-n*::
 	Don't fork to background
 *-V*::
-  Show version information and exit
+    Show version information and exit
+*-v*::
+    Verbose output
 
 DESCRIPTION
 -----------

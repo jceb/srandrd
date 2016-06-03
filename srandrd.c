@@ -46,7 +46,9 @@ help(int status)
 	fprintf(stderr, "Usage: " NAME " [option] command\n\n"
 			"Options:\n"
 			"   -h  Print this help and exit\n"
-			"   -n  Don't fork to background\n" "   -V  Print version information and exit\n");
+			"   -n  Don't fork to background\n"
+			"   -V  Print version information and exit\n"
+			"   -v  Verbose output\n");
 	exit(status);
 }
 
