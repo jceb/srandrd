@@ -16,7 +16,7 @@ OPTIONS
 -------
 *-h*::
 	Print help and exit
-*-n*:: 
+*-n*::
 	Don't fork to background
 *-V*::
   Show version information and exit
@@ -25,9 +25,9 @@ DESCRIPTION
 -----------
 srandrd(1) is a tool that executes a command on xrandr output change
 events, i.e. if a monitor is plugged or unplugged. By default srandrd forks to
-background and exits if the xserver exits. 
+background and exits if the xserver exits.
 In the childs environment the environment variable 'SRANDRD_ACTION' is set which
-is of the format 
+is of the format
 
 ----
 DISPLAYNAME [connected|disconnected|unknown]
@@ -35,7 +35,7 @@ DISPLAYNAME [connected|disconnected|unknown]
 
 EXAMPLE
 -------
-An example usage could be 
+An example usage could be
 
 ----
 srandrd display_handler
@@ -46,7 +46,7 @@ where display_handler being the following script
 ----
 #!/bin/sh
 
-case "$SRANDRD_ACTION" in 
+case "$SRANDRD_ACTION" in
   "DVI-0 connected") xrandr --output DVI-0 --auto --right-of LVDS;;
   "VGA-0 connected") xrandr --output VGA-0 --auto --left-of LVDS;;
 esac
@@ -57,6 +57,6 @@ RESOURCES
 
 bitbucket: http://bitbucket.org/portix/srandrd
 
-AUTHOR 
+AUTHOR
 ------
 Stefan Bolte <portix@gmx.net>
