@@ -75,5 +75,5 @@ github: https://github.com/jceb/srandrd
 
 AUTHOR
 ------
-Jan Christoph Ebersbach <jceb@e-jc.de>
-Stefan Bolte <portix@gmx.net>
+* Jan Christoph Ebersbach <jceb@e-jc.de>
+* Stefan Bolte <portix@gmx.net>
