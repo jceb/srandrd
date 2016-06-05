@@ -42,6 +42,14 @@ is of the format
 VENDOR[4]PRODUCT[4]SERIAL[8]
 ----
 
+Finally, the environment variable 'SRANDRD_SCREENID' is set (if available) which
+is of the format
+
+----
+XINERAMA_SCREENID[1|2]
+----
+
+
 EXAMPLE
 -------
 An example usage could be

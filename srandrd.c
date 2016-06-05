@@ -14,7 +14,9 @@
 #include <X11/extensions/Xrandr.h>
 
 #define OCNE(X) ((XRROutputChangeNotifyEvent*)X)
-#define BUFFER_SIZE 128
+#define ACTION_SIZE 128
+#define EDID_SIZE 17
+#define SCREENID_SIZE 3
 
 char *con_actions[] = { "connected", "disconnected", "unknown" };
 
@@ -63,17 +65,42 @@ version(void)
 }
 
 int
+get_screenid(Display * dpy, RROutput output)
+{
+	int i, j, screenid = -1;
+	XRRScreenResources *sr;
+	XRRCrtcInfo *ci;
+
+	sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
+	for (i = 0; i < sr->ncrtc; ++i) {
+		if ((ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[i]))) {
+			for (j = 0; j < ci->noutput; ++j) {
+				if (ci->outputs[j] == output) {
+					screenid = i;
+					break;
+				}
+			}
+			XRRFreeCrtcInfo(ci);
+			if (screenid != -1)
+				break;
+		}
+	}
+	XRRFreeScreenResources(sr);
+	return screenid;
+}
+
+int
 main(int argc, char **argv)
 {
 	XEvent ev;
 	Display *dpy;
 	int daemonize = 1, args = 1, verbose = 0, props = 0;
-	char buf[BUFFER_SIZE], edid[17];
+	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
 	uid_t uid;
 	Atom atom_edid, real;
 	Atom *properties;
 	Bool has_edid_prop;
-	int format;
+	int i, format;
 	unsigned long n, extra;
 	unsigned char *p;
 	uint16_t vendor, product;
@@ -132,6 +159,7 @@ main(int argc, char **argv)
 		product = 0;
 		serial = 0;
 		edid[0] = 0;
+		screenid[0] = 0;
 		has_edid_prop = False;
 
 		if (!XNextEvent(dpy, &ev)) {
@@ -153,7 +181,7 @@ main(int argc, char **argv)
 			properties = XRRListOutputProperties(OCNE(&ev)->display, OCNE(&ev)->output, &props);
 			atom_edid = XInternAtom(OCNE(&ev)->display, RR_PROPERTY_RANDR_EDID, False);
 			/* atom_edid = XInternAtom(OCNE(&ev)->display, RR_PROPERTY_GUID, False); */
-			for (int i = 0; i < props; ++i) {
+			for (i = 0; i < props; ++i) {
 				if (properties[i] == atom_edid) {
 					has_edid_prop = True;
 					break;
@@ -162,19 +190,23 @@ main(int argc, char **argv)
 			XFree(properties);
 			if (has_edid_prop) {
 				if (XRRGetOutputProperty(OCNE(&ev)->display, OCNE(&ev)->output,
-							atom_edid, 0L, 128L, False, False, AnyPropertyType, &real, &format,
-							&n, &extra, &p) == Success) {
+										 atom_edid, 0L, 128L, False, False, AnyPropertyType, &real, &format,
+										 &n, &extra, &p) == Success) {
 					if (n >= 127) {
 						vendor = (p[9] << 8) | p[8];
 						product = (p[11] << 8) | p[10];
 						serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
-						snprintf(edid, 17, "%04X%04X%08X", vendor, product, serial);
+						snprintf(edid, EDID_SIZE, "%04X%04X%08X", vendor, product, serial);
 					}
-					XFree(p);
+					free(p);
 				}
 			}
 
-			snprintf(buf, BUFFER_SIZE, "%s %s", info->name, con_actions[info->connection]);
+			i = get_screenid(OCNE(&ev)->display, OCNE(&ev)->output);
+			if (i != -1)
+				snprintf(screenid, SCREENID_SIZE, "%d", i);
+			fprintf(stderr, "screenid %s\n", screenid);
+			snprintf(action, ACTION_SIZE, "%s %s", info->name, con_actions[info->connection]);
 			if (verbose) {
 				printf("Event: %s %s\n", info->name, con_actions[info->connection]);
 				printf("Time: %lu\n", info->timestamp);
@@ -191,7 +223,8 @@ main(int argc, char **argv)
 				}
 				if (vendor) {
 					printf("EDID (vendor, product, serial): %04X%04X%08X\n", vendor, product, serial);
-				} else {
+				}
+				else {
 					printf("EDID (vendor, product, serial): not available\n");
 				}
 			}
@@ -199,8 +232,9 @@ main(int argc, char **argv)
 				if (dpy)
 					close(ConnectionNumber(dpy));
 				setsid();
-				setenv("SRANDRD_ACTION", buf, False);
+				setenv("SRANDRD_ACTION", action, False);
 				setenv("SRANDRD_EDID", edid, False);
+				setenv("SRANDRD_SCREENID", screenid, False);
 				execvp(argv[args], &(argv[args]));
 			}
 			XRRFreeScreenResources(resources);
