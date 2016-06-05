@@ -35,6 +35,13 @@ is of the format
 DISPLAYNAME [connected|disconnected|unknown]
 ----
 
+Furthermore, the environment variable 'SRANDRD_EDID' is set (if available) which
+is of the format
+
+----
+VENDOR[4]PRODUCT[4]SERIAL[8]
+----
+
 EXAMPLE
 -------
 An example usage could be
@@ -57,8 +64,9 @@ esac
 RESOURCES
 ---------
 
-bitbucket: http://bitbucket.org/portix/srandrd
+github: https://github.com/jceb/srandrd
 
 AUTHOR
 ------
+Jan Christoph Ebersbach <jceb@e-jc.de>
 Stefan Bolte <portix@gmx.net>

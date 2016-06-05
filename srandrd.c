@@ -2,6 +2,7 @@
  * srandrd - simple randr daemon
  */
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -66,9 +67,17 @@ main(int argc, char **argv)
 {
 	XEvent ev;
 	Display *dpy;
-	int daemonize = 1, args = 1, verbose = 0;
-	char buf[BUFFER_SIZE];
+	int daemonize = 1, args = 1, verbose = 0, props = 0;
+	char buf[BUFFER_SIZE], edid[17];
 	uid_t uid;
+	Atom atom_edid, real;
+	Atom *properties;
+	Bool has_edid_prop;
+	int format;
+	unsigned long n, extra;
+	unsigned char *p;
+	uint16_t vendor, product;
+	uint32_t serial;
 
 	if (argc < 2)
 		help(EXIT_FAILURE);
@@ -119,6 +128,11 @@ main(int argc, char **argv)
 	XSync(dpy, False);
 	XSetIOErrorHandler((XIOErrorHandler) error_handler);
 	while (1) {
+		vendor = 0;
+		product = 0;
+		serial = 0;
+		has_edid_prop = False;
+
 		if (!XNextEvent(dpy, &ev)) {
 			XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
 																  OCNE(&ev)->window);
@@ -133,6 +147,30 @@ main(int argc, char **argv)
 				XRRFreeScreenResources(resources);
 				fprintf(stderr, "Could not get output info\n");
 				continue;
+			}
+
+			properties = XRRListOutputProperties(OCNE(&ev)->display, OCNE(&ev)->output, &props);
+			atom_edid = XInternAtom(OCNE(&ev)->display, RR_PROPERTY_RANDR_EDID, False);
+			/* atom_edid = XInternAtom(OCNE(&ev)->display, RR_PROPERTY_GUID, False); */
+			for (int i = 0; i < props; ++i) {
+				if (properties[i] == atom_edid) {
+					has_edid_prop = True;
+					break;
+				}
+			}
+			XFree(properties);
+			if (has_edid_prop) {
+				if (XRRGetOutputProperty(OCNE(&ev)->display, OCNE(&ev)->output,
+							atom_edid, 0L, 128L, False, False, AnyPropertyType, &real, &format,
+							&n, &extra, &p) == Success) {
+					if (n >= 127) {
+						vendor = (p[9] << 8) | p[8];
+						product = (p[11] << 8) | p[10];
+						serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
+						snprintf(edid, 17, "%04X%04X%08X", vendor, product, serial);
+					}
+					XFree(p);
+				}
 			}
 
 			snprintf(buf, BUFFER_SIZE, "%s %s", info->name, con_actions[info->connection]);
@@ -150,12 +188,20 @@ main(int argc, char **argv)
 						XRRFreeCrtcInfo(crtc);
 					}
 				}
+				if (vendor) {
+					printf("EDID (vendor, product, serial): %04X%04X%08X\n", vendor, product, serial);
+				} else {
+					printf("EDID (vendor, product, serial): not available\n");
+				}
 			}
 			if (fork() == 0) {
 				if (dpy)
 					close(ConnectionNumber(dpy));
 				setsid();
 				setenv("SRANDRD_ACTION", buf, False);
+				if (vendor) {
+					setenv("SRANDRD_EDID", edid, False);
+				}
 				execvp(argv[args], &(argv[args]));
 			}
 			XRRFreeScreenResources(resources);

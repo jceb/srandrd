@@ -2,12 +2,12 @@
 .\"     Title: srandrd
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: Asciidoctor 1.5.4
-.\"      Date: 2016-06-03
+.\"      Date: 2016-06-05
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "SRANDRD" "1" "2016-06-03" "\ \&" "\ \&"
+.TH "SRANDRD" "1" "2016-06-05" "\ \&" "\ \&"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .ss \n[.ss] 0
@@ -61,6 +61,19 @@ DISPLAYNAME [connected|disconnected|unknown]
 .if n \{\
 .RE
 .\}
+.sp
+Furthermore, the environment variable \fISRANDRD_EDID\fP is set (if available) which
+is of the format
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+VENDOR[4]PRODUCT[4]SERIAL[8]
+.fi
+.if n \{\
+.RE
+.\}
 .SH "EXAMPLE"
 .sp
 An example usage could be
@@ -93,9 +106,11 @@ esac
 .\}
 .SH "RESOURCES"
 .sp
-bitbucket: \c
-.URL "http://bitbucket.org/portix/srandrd" "" ""
+github: \c
+.URL "https://github.com/jceb/srandrd" "" ""
 .SH "AUTHOR"
 .sp
+Jan Christoph Ebersbach <\c
+.MTO "jceb\(ate\-jc.de" "jceb@e\-jc.de" ">"
 Stefan Bolte <\c
 .MTO "portix\(atgmx.net" "portix@gmx.net" ">"
