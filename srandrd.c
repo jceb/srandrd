@@ -131,6 +131,7 @@ main(int argc, char **argv)
 		vendor = 0;
 		product = 0;
 		serial = 0;
+		edid[0] = 0;
 		has_edid_prop = False;
 
 		if (!XNextEvent(dpy, &ev)) {
@@ -199,9 +200,7 @@ main(int argc, char **argv)
 					close(ConnectionNumber(dpy));
 				setsid();
 				setenv("SRANDRD_ACTION", buf, False);
-				if (vendor) {
-					setenv("SRANDRD_EDID", edid, False);
-				}
+				setenv("SRANDRD_EDID", edid, False);
 				execvp(argv[args], &(argv[args]));
 			}
 			XRRFreeScreenResources(resources);
