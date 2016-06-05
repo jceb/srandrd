@@ -49,7 +49,6 @@ is of the format
 XINERAMA_SCREENID[1|2]
 ----
 
-
 EXAMPLE
 -------
 An example usage could be
