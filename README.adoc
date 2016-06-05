@@ -4,16 +4,16 @@ SRANDRD(1)
 ==========
 :doctype: manpage
 
-NAME
-----
+== NAME
+
 srandrd - simple randr daemon
 
-SYNOPSIS
---------
+== SYNOPSIS
+
 *srandrd* ['OPTIONS'] 'COMMAND'
 
-OPTIONS
--------
+== OPTIONS
+
 *-h*::
 	Print help and exit
 *-n*::
@@ -23,8 +23,8 @@ OPTIONS
 *-v*::
     Verbose output
 
-DESCRIPTION
------------
+== DESCRIPTION
+
 srandrd(1) is a tool that executes a command on xrandr output change
 events, i.e. if a monitor is plugged or unplugged. By default srandrd forks to
 background and exits if the xserver exits.
@@ -49,8 +49,8 @@ is of the format
 XINERAMA_SCREENID[1|2]
 ----
 
-EXAMPLE
--------
+== EXAMPLE
+
 An example usage could be
 
 ----
@@ -68,12 +68,11 @@ case "$SRANDRD_ACTION" in
 esac
 ----
 
-RESOURCES
----------
+== RESOURCES
 
 github: https://github.com/jceb/srandrd
 
-AUTHOR
-------
+== AUTHOR
+
 * Jan Christoph Ebersbach <jceb@e-jc.de>
 * Stefan Bolte <portix@gmx.net>
