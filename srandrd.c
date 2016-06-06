@@ -15,7 +15,7 @@
 
 #define OCNE(X) ((XRROutputChangeNotifyEvent*)X)
 #define ACTION_SIZE 128
-#define EDID_SIZE 17
+#define EDID_SIZE 18
 #define SCREENID_SIZE 3
 
 char *con_actions[] = { "connected", "disconnected", "unknown" };
