@@ -252,7 +252,6 @@ main(int argc, char **argv)
 			i = get_screenid(OCNE(&ev)->display, OCNE(&ev)->output);
 			if (i != -1)
 				snprintf(screenid, SCREENID_SIZE, "%d", i);
-			fprintf(stderr, "screenid %s\n", screenid);
 			snprintf(action, ACTION_SIZE, "%s %s", info->name, con_actions[info->connection]);
 			if (verbose) {
 				printf("Event: %s %s\n", info->name, con_actions[info->connection]);
