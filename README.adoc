@@ -10,7 +10,10 @@ srandrd - simple randr daemon
 
 == SYNOPSIS
 
-*srandrd* ['OPTIONS'] 'COMMAND'
+*srandrd* ['OPTIONS'] 'COMMAND|list'
+
+*list*::
+	List outputs and EDIDs and terminate
 
 == OPTIONS
 

@@ -46,7 +46,8 @@ catch_child(int sig)
 static void
 help(int status)
 {
-	fprintf(stderr, "Usage: " NAME " [option] command\n\n"
+	fprintf(stderr, "Usage: " NAME " [option] command|list\n\n"
+			"   list  List outputs and EDIDs and terminate\n\n"
 			"Options:\n"
 			"   -h  Print this help and exit\n"
 			"   -n  Don't fork to background\n"
@@ -94,13 +95,13 @@ main(int argc, char **argv)
 {
 	XEvent ev;
 	Display *dpy;
-	int daemonize = 1, args = 1, verbose = 0, props = 0;
+	int daemonize = 1, args = 1, verbose = 0, props = 0, list = 0;
 	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
 	uid_t uid;
 	Atom atom_edid, real;
 	Atom *properties;
 	Bool has_edid_prop;
-	int i, format;
+	int i, j, format;
 	unsigned long n, extra;
 	unsigned char *p;
 	uint16_t vendor, product;
@@ -122,17 +123,63 @@ main(int argc, char **argv)
 		case 'h':
 			help(EXIT_SUCCESS);
 		default:
+			printf("%d\n", list);
 			help(EXIT_FAILURE);
 		}
 	}
 	if (argv[args] == NULL)
 		help(EXIT_FAILURE);
 
+	if (strncmp("list", argv[args], 5) == 0) {
+		list = 1;
+	}
+
 	if (((uid = getuid()) == 0) || uid != geteuid())
 		xerror("%s may not run as root\n", NAME);
 
 	if ((dpy = XOpenDisplay(NULL)) == NULL)
 		xerror("Cannot open display\n");
+
+	if (list) {
+		XRRScreenResources *sr;
+		XRROutputInfo *info;
+
+
+		sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
+		for (i = 0; i < sr->ncrtc; i++) {
+			edid[0] = 0;
+			info = XRRGetOutputInfo (dpy, sr, sr->outputs[i]);
+			printf("%s", info->name);
+			XRRFreeOutputInfo(info);
+
+			properties = XRRListOutputProperties(dpy, sr->outputs[i], &props);
+			atom_edid = XInternAtom(dpy, RR_PROPERTY_RANDR_EDID, False);
+			for (j = 0; j < props; j++) {
+				if (properties[j] == atom_edid) {
+					has_edid_prop = True;
+					break;
+				}
+			}
+			XFree(properties);
+
+			if (has_edid_prop) {
+				if (XRRGetOutputProperty(dpy, sr->outputs[i],
+							atom_edid, 0L, 128L, False, False, AnyPropertyType, &real, &format,
+							&n, &extra, &p) == Success) {
+					if (n >= 127) {
+						vendor = (p[9] << 8) | p[8];
+						product = (p[11] << 8) | p[10];
+						serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
+						snprintf(edid, EDID_SIZE, " %04X%04X%08X", vendor, product, serial);
+					}
+					free(p);
+				}
+			}
+			printf("%s\n", edid);
+		}
+		XRRFreeScreenResources(sr);
+		return 0;
+	}
 
 	if (daemonize) {
 		switch (fork()) {
