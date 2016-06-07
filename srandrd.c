@@ -91,21 +91,57 @@ get_screenid(Display * dpy, RROutput output)
 }
 
 int
+get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
+{
+	int props = 0, res = 0;
+	Atom *properties;
+	Atom atom_edid, real;
+	int i, format;
+	uint16_t vendor, product;
+	uint32_t serial;
+	unsigned char *p;
+	unsigned long n, extra;
+	Bool has_edid_prop = False;
+
+	if(edidlen)
+		edid[0] = 0;
+	else
+		return res;
+	properties = XRRListOutputProperties(dpy, out, &props);
+	atom_edid = XInternAtom(dpy, RR_PROPERTY_RANDR_EDID, False);
+	for (i = 0; i < props; i++) {
+		if (properties[i] == atom_edid) {
+			has_edid_prop = True;
+			break;
+		}
+	}
+	XFree(properties);
+
+	if (has_edid_prop) {
+		if (XRRGetOutputProperty(dpy, out, atom_edid, 0L, 128L, False, False,
+					AnyPropertyType, &real, &format, &n, &extra, &p) == Success)
+		{
+			if (n >= 127) {
+				vendor = (p[9] << 8) | p[8];
+				product = (p[11] << 8) | p[10];
+				serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
+				snprintf(edid, edidlen, " %04X%04X%08X", vendor, product, serial);
+				res = EDID_SIZE;
+			}
+			free(p);
+		}
+	}
+	return res;
+}
+
+int
 main(int argc, char **argv)
 {
 	XEvent ev;
 	Display *dpy;
-	int daemonize = 1, args = 1, verbose = 0, props = 0, list = 0;
+	int daemonize = 1, args = 1, verbose = 0, list = 0, edidlen, i;
 	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
 	uid_t uid;
-	Atom atom_edid, real;
-	Atom *properties;
-	Bool has_edid_prop;
-	int i, j, format;
-	unsigned long n, extra;
-	unsigned char *p;
-	uint16_t vendor, product;
-	uint32_t serial;
 
 	if (argc < 2)
 		help(EXIT_FAILURE);
@@ -147,34 +183,11 @@ main(int argc, char **argv)
 
 		sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
 		for (i = 0; i < sr->ncrtc; i++) {
-			edid[0] = 0;
 			info = XRRGetOutputInfo (dpy, sr, sr->outputs[i]);
 			printf("%s", info->name);
 			XRRFreeOutputInfo(info);
 
-			properties = XRRListOutputProperties(dpy, sr->outputs[i], &props);
-			atom_edid = XInternAtom(dpy, RR_PROPERTY_RANDR_EDID, False);
-			for (j = 0; j < props; j++) {
-				if (properties[j] == atom_edid) {
-					has_edid_prop = True;
-					break;
-				}
-			}
-			XFree(properties);
-
-			if (has_edid_prop) {
-				if (XRRGetOutputProperty(dpy, sr->outputs[i],
-							atom_edid, 0L, 128L, False, False, AnyPropertyType, &real, &format,
-							&n, &extra, &p) == Success) {
-					if (n >= 127) {
-						vendor = (p[9] << 8) | p[8];
-						product = (p[11] << 8) | p[10];
-						serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
-						snprintf(edid, EDID_SIZE, " %04X%04X%08X", vendor, product, serial);
-					}
-					free(p);
-				}
-			}
+			get_edid(dpy, sr->outputs[i], edid, EDID_SIZE);
 			printf("%s\n", edid);
 		}
 		XRRFreeScreenResources(sr);
@@ -202,12 +215,7 @@ main(int argc, char **argv)
 	XSync(dpy, False);
 	XSetIOErrorHandler((XIOErrorHandler) error_handler);
 	while (1) {
-		vendor = 0;
-		product = 0;
-		serial = 0;
-		edid[0] = 0;
 		screenid[0] = 0;
-		has_edid_prop = False;
 
 		if (!XNextEvent(dpy, &ev)) {
 			XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
@@ -225,29 +233,7 @@ main(int argc, char **argv)
 				continue;
 			}
 
-			properties = XRRListOutputProperties(OCNE(&ev)->display, OCNE(&ev)->output, &props);
-			atom_edid = XInternAtom(OCNE(&ev)->display, RR_PROPERTY_RANDR_EDID, False);
-			/* atom_edid = XInternAtom(OCNE(&ev)->display, RR_PROPERTY_GUID, False); */
-			for (i = 0; i < props; ++i) {
-				if (properties[i] == atom_edid) {
-					has_edid_prop = True;
-					break;
-				}
-			}
-			XFree(properties);
-			if (has_edid_prop) {
-				if (XRRGetOutputProperty(OCNE(&ev)->display, OCNE(&ev)->output,
-										 atom_edid, 0L, 128L, False, False, AnyPropertyType, &real, &format,
-										 &n, &extra, &p) == Success) {
-					if (n >= 127) {
-						vendor = (p[9] << 8) | p[8];
-						product = (p[11] << 8) | p[10];
-						serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
-						snprintf(edid, EDID_SIZE, "%04X%04X%08X", vendor, product, serial);
-					}
-					free(p);
-				}
-			}
+			edidlen = get_edid(OCNE(&ev)->display, OCNE(&ev)->output, edid, EDID_SIZE);
 
 			i = get_screenid(OCNE(&ev)->display, OCNE(&ev)->output);
 			if (i != -1)
@@ -267,8 +253,8 @@ main(int argc, char **argv)
 						XRRFreeCrtcInfo(crtc);
 					}
 				}
-				if (vendor) {
-					printf("EDID (vendor, product, serial): %04X%04X%08X\n", vendor, product, serial);
+				if (edidlen) {
+					printf("EDID (vendor, product, serial): %s\n", edid);
 				}
 				else {
 					printf("EDID (vendor, product, serial): not available\n");
