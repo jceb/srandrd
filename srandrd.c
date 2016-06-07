@@ -12,10 +12,11 @@
 #include <fcntl.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/Xinerama.h>
 
 #define OCNE(X) ((XRROutputChangeNotifyEvent*)X)
 #define ACTION_SIZE 128
-#define EDID_SIZE 18
+#define EDID_SIZE 17
 #define SCREENID_SIZE 3
 
 char *con_actions[] = { "connected", "disconnected", "unknown" };
@@ -66,27 +67,39 @@ version(void)
 }
 
 int
-get_screenid(Display * dpy, RROutput output)
+get_screenid(Display *dpy, RROutput output)
 {
-	int i, j, screenid = -1;
+	XRRMonitorInfo *mi;
 	XRRScreenResources *sr;
-	XRRCrtcInfo *ci;
+	XineramaScreenInfo *si;
+	int i, j, k, screenid = -1;
+	int nmonitors, nscreens;
 
+	si = XineramaQueryScreens(dpy, &nscreens);
+	mi = XRRGetMonitors(dpy, DefaultRootWindow(dpy), True, &nmonitors);
 	sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
-	for (i = 0; i < sr->ncrtc; ++i) {
-		if ((ci = XRRGetCrtcInfo(dpy, sr, sr->crtcs[i]))) {
-			for (j = 0; j < ci->noutput; ++j) {
-				if (ci->outputs[j] == output) {
+
+	for (j = 0; j < nmonitors; ++j) {
+		for (k = 0; k < mi[j].noutput && mi[j].outputs[k] != output; ++k);
+		if(k < mi[j].noutput)
+			break;
+	}
+
+	if(si && mi && j < nmonitors) {
+		for (i = 0; i < nscreens; ++i) {
+				if (si[i].x_org == mi[j].x &&
+						si[i].y_org == mi[j].y &&
+						si[i].width == mi[j].width &&
+						si[i].height == mi[j].height) {
 					screenid = i;
 					break;
 				}
-			}
-			XRRFreeCrtcInfo(ci);
-			if (screenid != -1)
-				break;
 		}
+		XFree(si);
+		XRRFreeMonitors(mi);
 	}
 	XRRFreeScreenResources(sr);
+
 	return screenid;
 }
 
@@ -125,7 +138,7 @@ get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
 				vendor = (p[9] << 8) | p[8];
 				product = (p[11] << 8) | p[10];
 				serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
-				snprintf(edid, edidlen, " %04X%04X%08X", vendor, product, serial);
+				snprintf(edid, edidlen, "%04X%04X%08X", vendor, product, serial);
 				res = EDID_SIZE;
 			}
 			free(p);
@@ -137,11 +150,18 @@ get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
 int
 main(int argc, char **argv)
 {
-	XEvent ev;
 	Display *dpy;
-	int daemonize = 1, args = 1, verbose = 0, list = 0, edidlen, i;
+	XEvent ev;
+	XRRMonitorInfo *mi;
+	XRROutputInfo *info;
+	XRRScreenResources *sr;
+	XineramaScreenInfo *si;
 	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
+	int daemonize = 1, args = 1, verbose = 0, list = 0;
+	int i, j, k, edidlen;
+	int nmonitors, nscreens;
 	uid_t uid;
+
 
 	if (argc < 2)
 		help(EXIT_FAILURE);
@@ -177,18 +197,28 @@ main(int argc, char **argv)
 		xerror("Cannot open display\n");
 
 	if (list) {
-		XRRScreenResources *sr;
-		XRROutputInfo *info;
-
-
+		si = XineramaQueryScreens(dpy, &nscreens);
+		mi = XRRGetMonitors(dpy, DefaultRootWindow(dpy), True, &nmonitors);
 		sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
-		for (i = 0; i < sr->ncrtc; i++) {
-			info = XRRGetOutputInfo (dpy, sr, sr->outputs[i]);
-			printf("%s", info->name);
-			XRRFreeOutputInfo(info);
-
-			get_edid(dpy, sr->outputs[i], edid, EDID_SIZE);
-			printf("%s\n", edid);
+		if(si && mi) {
+			for (i = 0; i < nscreens; ++i) {
+				for (j = 0; j < nmonitors; ++j) {
+					if (si[i].x_org == mi[j].x &&
+							si[i].y_org == mi[j].y &&
+							si[i].width == mi[j].width &&
+							si[i].height == mi[j].height) {
+						for (k = 0; k < mi[j].noutput; ++k) {
+							info = XRRGetOutputInfo (dpy, sr, mi[j].outputs[k]);
+							get_edid(dpy, mi[j].outputs[k], edid, EDID_SIZE);
+							printf("%s %s\n", info->name, edid);
+							XRRFreeOutputInfo(info);
+						}
+						break;
+					}
+				}
+			}
+			XFree(si);
+			XRRFreeMonitors(mi);
 		}
 		XRRFreeScreenResources(sr);
 		return 0;
@@ -218,17 +248,16 @@ main(int argc, char **argv)
 		screenid[0] = 0;
 
 		if (!XNextEvent(dpy, &ev)) {
-			XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
-																  OCNE(&ev)->window);
-			if (resources == NULL) {
+			sr = XRRGetScreenResources(OCNE(&ev)->display, OCNE(&ev)->window);
+			if (sr == NULL) {
 				fprintf(stderr, "Could not get screen resources\n");
 				continue;
 			}
 
-			XRROutputInfo *info = XRRGetOutputInfo(OCNE(&ev)->display, resources,
+			info = XRRGetOutputInfo(OCNE(&ev)->display, sr,
 												   OCNE(&ev)->output);
 			if (info == NULL) {
-				XRRFreeScreenResources(resources);
+				XRRFreeScreenResources(sr);
 				fprintf(stderr, "Could not get output info\n");
 				continue;
 			}
@@ -247,7 +276,7 @@ main(int argc, char **argv)
 				}
 				else {
 					printf("CRTC: %lu\n", info->crtc);
-					XRRCrtcInfo *crtc = XRRGetCrtcInfo(dpy, resources, info->crtc);
+					XRRCrtcInfo *crtc = XRRGetCrtcInfo(dpy, sr, info->crtc);
 					if (crtc != NULL) {
 						printf("Size: %dx%d\n", crtc->width, crtc->height);
 						XRRFreeCrtcInfo(crtc);
@@ -269,7 +298,7 @@ main(int argc, char **argv)
 				setenv("SRANDRD_SCREENID", screenid, False);
 				execvp(argv[args], &(argv[args]));
 			}
-			XRRFreeScreenResources(resources);
+			XRRFreeScreenResources(sr);
 			XRRFreeOutputInfo(info);
 		}
 	}
