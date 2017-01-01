@@ -210,12 +210,12 @@ emit(Display * dpy, char *action, char *edid, char *screenid)
 void
 emit_crtc(Display * dpy, char *name, char *edid, int sid)
 {
-	printf("%s %s\n", name, edid);
-	char screenid[SCREENID_SIZE];
+	char screenid[SCREENID_SIZE], action[ACTION_SIZE];
 	screenid[0] = 0;
+	snprintf(action, ACTION_SIZE, "%s %s", name, CON_ACTIONS[0]);
 	if (sid != -1)
 		snprintf(screenid, SCREENID_SIZE, "%d", sid);
-	emit(dpy, CON_ACTIONS[0], edid, screenid);
+	emit(dpy, action, edid, screenid);
 }
 
 int
