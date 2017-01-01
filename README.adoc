@@ -25,6 +25,8 @@ srandrd - simple randr daemon
     Show version information and exit
 *-v*::
     Verbose output
+*-e*::
+    Emit connected devices at startup
 
 == DESCRIPTION
 

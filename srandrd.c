@@ -19,7 +19,10 @@
 #define EDID_SIZE 17
 #define SCREENID_SIZE 3
 
-char *con_actions[] = { "connected", "disconnected", "unknown" };
+char *CON_ACTIONS[] = { "connected", "disconnected", "unknown" };
+
+char **ARGV;
+int ARGS;
 
 static void
 xerror(const char *format, ...)
@@ -53,7 +56,7 @@ help(int status)
 			"   -h  Print this help and exit\n"
 			"   -n  Don't fork to background\n"
 			"   -V  Print version information and exit\n"
-			"   -v  Verbose output\n");
+			"   -v  Verbose output\n" "   -e  Emit connected devices at startup\n");
 	exit(status);
 }
 
@@ -67,7 +70,7 @@ version(void)
 }
 
 int
-get_screenid(Display *dpy, RROutput output)
+get_screenid(Display * dpy, RROutput output)
 {
 	XRRMonitorInfo *mi;
 	XRRScreenResources *sr;
@@ -81,19 +84,17 @@ get_screenid(Display *dpy, RROutput output)
 
 	for (j = 0; j < nmonitors; ++j) {
 		for (k = 0; k < mi[j].noutput && mi[j].outputs[k] != output; ++k);
-		if(k < mi[j].noutput)
+		if (k < mi[j].noutput)
 			break;
 	}
 
-	if(si && mi && j < nmonitors) {
+	if (si && mi && j < nmonitors) {
 		for (i = 0; i < nscreens; ++i) {
-				if (si[i].x_org == mi[j].x &&
-						si[i].y_org == mi[j].y &&
-						si[i].width == mi[j].width &&
-						si[i].height == mi[j].height) {
-					screenid = i;
-					break;
-				}
+			if (si[i].x_org == mi[j].x &&
+				si[i].y_org == mi[j].y && si[i].width == mi[j].width && si[i].height == mi[j].height) {
+				screenid = i;
+				break;
+			}
 		}
 		XFree(si);
 		XRRFreeMonitors(mi);
@@ -104,7 +105,7 @@ get_screenid(Display *dpy, RROutput output)
 }
 
 int
-get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
+get_edid(Display * dpy, RROutput out, char *edid, int edidlen)
 {
 	int props = 0, res = 0;
 	Atom *properties;
@@ -116,7 +117,7 @@ get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
 	unsigned long n, extra;
 	Bool has_edid_prop = False;
 
-	if(edidlen)
+	if (edidlen)
 		edid[0] = 0;
 	else
 		return res;
@@ -132,8 +133,7 @@ get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
 
 	if (has_edid_prop) {
 		if (XRRGetOutputProperty(dpy, out, atom_edid, 0L, 128L, False, False,
-					AnyPropertyType, &real, &format, &n, &extra, &p) == Success)
-		{
+								 AnyPropertyType, &real, &format, &n, &extra, &p) == Success) {
 			if (n >= 127) {
 				vendor = (p[9] << 8) | p[8];
 				product = (p[11] << 8) | p[10];
@@ -148,105 +148,93 @@ get_edid(Display *dpy, RROutput out, char *edid, int edidlen)
 }
 
 int
-main(int argc, char **argv)
+iter_crtcs(Display * dpy, void (*f) (Display *, char *, char *, int))
 {
-	Display *dpy;
-	XEvent ev;
 	XRRMonitorInfo *mi;
-	XRROutputInfo *info;
 	XRRScreenResources *sr;
 	XineramaScreenInfo *si;
-	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
-	int daemonize = 1, args = 1, verbose = 0, list = 0;
-	int i, j, k, edidlen;
-	int nmonitors, nscreens;
-	uid_t uid;
+	XRROutputInfo *info;
+	char edid[EDID_SIZE];
+	int i, j, k, nmonitors, nscreens, sid = -1;
 
+	si = XineramaQueryScreens(dpy, &nscreens);
+	mi = XRRGetMonitors(dpy, DefaultRootWindow(dpy), True, &nmonitors);
+	sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
+	if (si && mi) {
+		for (i = 0; i < nscreens; ++i) {
+			for (j = 0; j < nmonitors; ++j) {
+				for (k = 0; k < mi[j].noutput; ++k) {
+					sid = get_screenid(dpy, mi[j].outputs[k]);
+					if (i != sid)
+						continue;
 
-	if (argc < 2)
-		help(EXIT_FAILURE);
+					info = XRRGetOutputInfo(dpy, sr, mi[j].outputs[k]);
+					get_edid(dpy, mi[j].outputs[k], edid, EDID_SIZE);
+					f(dpy, info->name, edid, sid);
+					XRRFreeOutputInfo(info);
 
-	for (args = 1; args < argc && *(argv[args]) == '-'; args++) {
-		switch (argv[args][1]) {
-		case 'V':
-			version();
-		case 'n':
-			daemonize = 0;
-			break;
-		case 'v':
-			verbose++;
-			break;
-		case 'h':
-			help(EXIT_SUCCESS);
-		default:
-			printf("%d\n", list);
-			help(EXIT_FAILURE);
-		}
-	}
-	if (argv[args] == NULL)
-		help(EXIT_FAILURE);
-
-	if (strncmp("list", argv[args], 5) == 0) {
-		list = 1;
-	}
-
-	if (((uid = getuid()) == 0) || uid != geteuid())
-		xerror("%s may not run as root\n", NAME);
-
-	if ((dpy = XOpenDisplay(NULL)) == NULL)
-		xerror("Cannot open display\n");
-
-	if (list) {
-		si = XineramaQueryScreens(dpy, &nscreens);
-		mi = XRRGetMonitors(dpy, DefaultRootWindow(dpy), True, &nmonitors);
-		sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
-		if(si && mi) {
-			for (i = 0; i < nscreens; ++i) {
-				for (j = 0; j < nmonitors; ++j) {
-					if (si[i].x_org == mi[j].x &&
-							si[i].y_org == mi[j].y &&
-							si[i].width == mi[j].width &&
-							si[i].height == mi[j].height) {
-						for (k = 0; k < mi[j].noutput; ++k) {
-							info = XRRGetOutputInfo (dpy, sr, mi[j].outputs[k]);
-							get_edid(dpy, mi[j].outputs[k], edid, EDID_SIZE);
-							printf("%s %s\n", info->name, edid);
-							XRRFreeOutputInfo(info);
-						}
-						break;
-					}
 				}
+				if (i == sid)
+					break;
 			}
-			XFree(si);
-			XRRFreeMonitors(mi);
 		}
-		XRRFreeScreenResources(sr);
-		return 0;
+		XFree(si);
+		XRRFreeMonitors(mi);
 	}
+	XRRFreeScreenResources(sr);
+	return EXIT_SUCCESS;
+}
 
-	if (daemonize) {
-		switch (fork()) {
-		case -1:
-			xerror("Could not fork\n");
-		case 0:
-			break;
-		default:
-			exit(EXIT_SUCCESS);
-		}
+void
+print_crtc(Display * dpy, char *name, char *edid, int sid)
+{
+	printf("%s %s\n", name, edid);
+}
+
+pid_t
+emit(Display * dpy, char *action, char *edid, char *screenid)
+{
+	pid_t pid;
+	if ((pid = fork()) == 0) {
+		if (dpy)
+			close(ConnectionNumber(dpy));
 		setsid();
-
-		close(STDIN_FILENO);
-		close(STDERR_FILENO);
-		close(STDOUT_FILENO);
+		setenv("SRANDRD_ACTION", action, False);
+		setenv("SRANDRD_EDID", edid, False);
+		setenv("SRANDRD_SCREENID", screenid, False);
+		execvp(ARGV[ARGS], &(ARGV[ARGS]));
 	}
-	signal(SIGCHLD, catch_child);
+	return waitpid(pid, NULL, 0);
+}
+
+void
+emit_crtc(Display * dpy, char *name, char *edid, int sid)
+{
+	printf("%s %s\n", name, edid);
+	char screenid[SCREENID_SIZE];
+	screenid[0] = 0;
+	if (sid != -1)
+		snprintf(screenid, SCREENID_SIZE, "%d", sid);
+	emit(dpy, CON_ACTIONS[0], edid, screenid);
+}
+
+int
+process_events(Display * dpy, int verbose, int emit_startup)
+{
+	XRRScreenResources *sr;
+	XRROutputInfo *info;
+	XEvent ev;
+	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
+	int i, edidlen;
+
+	if (emit_startup)
+		iter_crtcs(dpy, &emit_crtc);
 
 	XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
 	XSync(dpy, False);
 	XSetIOErrorHandler((XIOErrorHandler) error_handler);
 	while (1) {
 		screenid[0] = 0;
-
 		if (!XNextEvent(dpy, &ev)) {
 			sr = XRRGetScreenResources(OCNE(&ev)->display, OCNE(&ev)->window);
 			if (sr == NULL) {
@@ -254,8 +242,7 @@ main(int argc, char **argv)
 				continue;
 			}
 
-			info = XRRGetOutputInfo(OCNE(&ev)->display, sr,
-												   OCNE(&ev)->output);
+			info = XRRGetOutputInfo(OCNE(&ev)->display, sr, OCNE(&ev)->output);
 			if (info == NULL) {
 				XRRFreeScreenResources(sr);
 				fprintf(stderr, "Could not get output info\n");
@@ -267,9 +254,11 @@ main(int argc, char **argv)
 			i = get_screenid(OCNE(&ev)->display, OCNE(&ev)->output);
 			if (i != -1)
 				snprintf(screenid, SCREENID_SIZE, "%d", i);
-			snprintf(action, ACTION_SIZE, "%s %s", info->name, con_actions[info->connection]);
+
+			snprintf(action, ACTION_SIZE, "%s %s", info->name, CON_ACTIONS[info->connection]);
+
 			if (verbose) {
-				printf("Event: %s %s\n", info->name, con_actions[info->connection]);
+				printf("Event: %s %s\n", info->name, CON_ACTIONS[info->connection]);
 				printf("Time: %lu\n", info->timestamp);
 				if (info->crtc == 0) {
 					printf("Size: %lumm x %lumm\n", info->mm_width, info->mm_height);
@@ -289,18 +278,78 @@ main(int argc, char **argv)
 					printf("EDID (vendor, product, serial): not available\n");
 				}
 			}
-			if (fork() == 0) {
-				if (dpy)
-					close(ConnectionNumber(dpy));
-				setsid();
-				setenv("SRANDRD_ACTION", action, False);
-				setenv("SRANDRD_EDID", edid, False);
-				setenv("SRANDRD_SCREENID", screenid, False);
-				execvp(argv[args], &(argv[args]));
-			}
+			emit(dpy, action, edid, screenid);
 			XRRFreeScreenResources(sr);
 			XRRFreeOutputInfo(info);
 		}
 	}
 	return EXIT_SUCCESS;
+}
+
+int
+main(int argc, char **argv)
+{
+	Display *dpy;
+	int daemonize = 1, args = 1, verbose = 0, emit = 0, list = 0;
+	uid_t uid;
+
+	if (argc < 2)
+		help(EXIT_FAILURE);
+
+	for (args = 1; args < argc && *(argv[args]) == '-'; args++) {
+		switch (argv[args][1]) {
+		case 'V':
+			version();
+		case 'n':
+			daemonize = 0;
+			break;
+		case 'v':
+			verbose++;
+			break;
+		case 'e':
+			emit++;
+			break;
+		case 'h':
+			help(EXIT_SUCCESS);
+		default:
+			printf("%d\n", list);
+			help(EXIT_FAILURE);
+		}
+	}
+	if (argv[args] == NULL)
+		help(EXIT_FAILURE);
+
+	if (strncmp("list", argv[args], 5) == 0)
+		list = 1;
+
+	if (((uid = getuid()) == 0) || uid != geteuid())
+		xerror("%s may not run as root\n", NAME);
+
+	if ((dpy = XOpenDisplay(NULL)) == NULL)
+		xerror("%s cannot open display\n", NAME);
+
+	if (list)
+		return iter_crtcs(dpy, &print_crtc);
+
+	if (daemonize) {
+		switch (fork()) {
+		case -1:
+			xerror("Could not fork\n");
+		case 0:
+			break;
+		default:
+			exit(EXIT_SUCCESS);
+		}
+		setsid();
+
+		close(STDIN_FILENO);
+		close(STDERR_FILENO);
+		close(STDOUT_FILENO);
+	}
+	signal(SIGCHLD, catch_child);
+
+	ARGV = argv;
+	ARGS = args;
+
+	return process_events(dpy, verbose, emit);
 }
