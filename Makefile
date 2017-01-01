@@ -30,7 +30,7 @@ $(TARGET): $(SOURCE)
 reindent: $(SOURCE)
 	indent -ts4 -i4 --braces-on-if-line -l120 --no-space-after-function-call-names $?
 
-install: $(TARGET)
+install: $(TARGET) doc
 	@echo Installing executable to $(INSTALLDIR)/bin
 	@install -d $(INSTALLDIR)/bin
 	@install -m 755 $(TARGET) $(INSTALLDIR)/bin/

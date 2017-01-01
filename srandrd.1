@@ -1,61 +1,71 @@
 '\" t
 .\"     Title: srandrd
-.\"    Author: [see the "AUTHORS" section]
-.\" Generator: Asciidoctor 1.5.4
-.\"      Date: 2016-06-06
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 01/01/2017
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "SRANDRD" "1" "2016-06-06" "\ \&" "\ \&"
+.TH "SRANDRD" "1" "01/01/2017" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
-.ss \n[.ss] 0
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
 .nh
+.\" disable justification (adjust text to left margin only)
 .ad l
-.de URL
-\\$2 \(laURL: \\$1 \(ra\\$3
-..
-.if \n[.g] .mso www.tmac
-.LINKSTYLE blue R < >
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
 .SH "NAME"
 srandrd \- simple randr daemon
 .SH "SYNOPSIS"
 .sp
-\fBsrandrd\fP [\fIOPTIONS\fP] \fICOMMAND|list\fP
-.sp
-\fBlist\fP
+\fBsrandrd\fR [\fIOPTIONS\fR] \fICOMMAND|list\fR
+.PP
+\fBlist\fR
 .RS 4
 List outputs and EDIDs and terminate
 .RE
 .SH "OPTIONS"
-.sp
-\fB\-h\fP
+.PP
+\fB\-h\fR
 .RS 4
 Print help and exit
 .RE
-.sp
-\fB\-n\fP
+.PP
+\fB\-n\fR
 .RS 4
 Don\(cqt fork to background
 .RE
-.sp
-\fB\-V\fP
+.PP
+\fB\-V\fR
 .RS 4
 Show version information and exit
 .RE
-.sp
-\fB\-v\fP
+.PP
+\fB\-v\fR
 .RS 4
 Verbose output
 .RE
+.PP
+\fB\-e\fR
+.RS 4
+Emit connected devices at startup
+.RE
 .SH "DESCRIPTION"
 .sp
-srandrd(1) is a tool that executes a command on xrandr output change
-events, i.e. if a monitor is plugged or unplugged. By default srandrd forks to
-background and exits if the xserver exits.
-In the childs environment the environment variable \fISRANDRD_ACTION\fP is set which
-is of the format
+srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&. In the childs environment the environment variable \fISRANDRD_ACTION\fR is set which is of the format
 .sp
 .if n \{\
 .RS 4
@@ -67,8 +77,7 @@ DISPLAYNAME [connected|disconnected|unknown]
 .RE
 .\}
 .sp
-Furthermore, the environment variable \fISRANDRD_EDID\fP is set (if available) which
-is of the format
+Furthermore, the environment variable \fISRANDRD_EDID\fR is set (if available) which is of the format
 .sp
 .if n \{\
 .RS 4
@@ -80,8 +89,7 @@ VENDOR[4]PRODUCT[4]SERIAL[8]
 .RE
 .\}
 .sp
-Finally, the environment variable \fISRANDRD_SCREENID\fP is set (if available) which
-is of the format
+Finally, the environment variable \fISRANDRD_SCREENID\fR is set (if available) which is of the format
 .sp
 .if n \{\
 .RS 4
@@ -124,8 +132,7 @@ esac
 .\}
 .SH "RESOURCES"
 .sp
-github: \c
-.URL "https://github.com/jceb/srandrd" "" ""
+github: https://github\&.com/jceb/srandrd
 .SH "AUTHOR"
 .sp
 .RS 4
@@ -136,8 +143,7 @@ github: \c
 .sp -1
 .IP \(bu 2.3
 .\}
-Jan Christoph Ebersbach <\c
-.MTO "jceb\(ate\-jc.de" "jceb@e\-jc.de" ">"
+Jan Christoph Ebersbach <jceb@e\-jc\&.de>
 .RE
 .sp
 .RS 4
@@ -148,6 +154,5 @@ Jan Christoph Ebersbach <\c
 .sp -1
 .IP \(bu 2.3
 .\}
-Stefan Bolte <\c
-.MTO "portix\(atgmx.net" "portix@gmx.net" ">"
+Stefan Bolte <portix@gmx\&.net>
 .RE
