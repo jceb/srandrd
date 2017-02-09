@@ -77,6 +77,10 @@ esac
 
 github: https://github.com/jceb/srandrd
 
+== RELATED
+
+screenconfig: https://github.com/jceb/screenconfig
+
 == AUTHOR
 
 * Jan Christoph Ebersbach <jceb@e-jc.de>
