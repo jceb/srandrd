@@ -56,7 +56,9 @@ help(int status)
 			"   -h  Print this help and exit\n"
 			"   -n  Don't fork to background\n"
 			"   -V  Print version information and exit\n"
-			"   -v  Verbose output\n" "   -e  Emit connected devices at startup\n");
+			"   -v  Verbose output\n"
+			"   -e  Emit connected devices at startup\n"
+			"   -1  One-shot mode (emit devices and exit)\n");
 	exit(status);
 }
 
