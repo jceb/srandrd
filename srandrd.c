@@ -219,16 +219,13 @@ emit_crtc(Display * dpy, char *name, char *edid, int sid)
 }
 
 int
-process_events(Display * dpy, int verbose, int emit_startup)
+process_events(Display * dpy, int verbose)
 {
 	XRRScreenResources *sr;
 	XRROutputInfo *info;
 	XEvent ev;
 	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
 	int i, edidlen;
-
-	if (emit_startup)
-		iter_crtcs(dpy, &emit_crtc);
 
 	XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
 	XSync(dpy, False);
@@ -351,5 +348,8 @@ main(int argc, char **argv)
 	ARGV = argv;
 	ARGS = args;
 
-	return process_events(dpy, verbose, emit);
+	if (emit)
+		iter_crtcs(dpy, &emit_crtc);
+
+	return process_events(dpy, verbose);
 }
