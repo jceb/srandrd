@@ -287,7 +287,8 @@ int
 main(int argc, char **argv)
 {
 	Display *dpy;
-	int daemonize = 1, args = 1, verbose = 0, emit = 0, list = 0;
+	int daemonize = 1, args = 1, verbose = 0, emit = 0, list = 0, oneshot = 0;
+	int rv = 0;
 	uid_t uid;
 
 	if (argc < 2)
@@ -303,6 +304,9 @@ main(int argc, char **argv)
 		case 'v':
 			verbose++;
 			break;
+		case '1':
+			oneshot++;
+			/* fallthrough: oneshot implies emit */
 		case 'e':
 			emit++;
 			break;
@@ -349,7 +353,8 @@ main(int argc, char **argv)
 	ARGS = args;
 
 	if (emit)
-		iter_crtcs(dpy, &emit_crtc);
-
-	return process_events(dpy, verbose);
+		rv = iter_crtcs(dpy, &emit_crtc);
+	if (!oneshot)
+		rv = process_events(dpy, verbose);
+	return rv;
 }
