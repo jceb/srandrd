@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: srandrd
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 02/23/2017
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 10/03/2018
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "SRANDRD" "1" "02/23/2017" "\ \&" "\ \&"
+.TH "SRANDRD" "1" "10/03/2018" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -65,13 +65,17 @@ Emit connected devices at startup
 .RE
 .SH "DESCRIPTION"
 .sp
-srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&. In the childs environment the environment variable \fISRANDRD_ACTION\fR is set which is of the format
+srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&.
+.sp
+In the child\(cqs environment the variable \fISRANDRD_OUTPUT\fR is set to the name graphics card output that triggered the event\&.
+.sp
+The variable \fISRANDRD_EVENT\fR is set to one of
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-DISPLAYNAME [connected|disconnected|unknown]
+[connected|disconnected|unknown]
 .fi
 .if n \{\
 .RE
@@ -122,7 +126,7 @@ where display_handler being the following script
 .nf
 #!/bin/sh
 
-case "$SRANDRD_ACTION" in
+case "$S{RANDRD_OUTPUT} ${SRANDRD_EVENT}" in
   "DVI\-0 connected") xrandr \-\-output DVI\-0 \-\-auto \-\-right\-of LVDS;;
   "VGA\-0 connected") xrandr \-\-output VGA\-0 \-\-auto \-\-left\-of LVDS;;
 esac

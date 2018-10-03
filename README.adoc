@@ -31,24 +31,27 @@ srandrd - simple randr daemon
 == DESCRIPTION
 
 srandrd(1) is a tool that executes a command on xrandr output change
-events, i.e. if a monitor is plugged or unplugged. By default srandrd forks to
-background and exits if the xserver exits.
-In the childs environment the environment variable 'SRANDRD_ACTION' is set which
-is of the format
+events, i.e. if a monitor is plugged or unplugged. By default srandrd
+forks to background and exits if the xserver exits.
+
+In the child's environment the variable 'SRANDRD_OUTPUT' is
+set to the name graphics card output that triggered the event.
+
+The variable 'SRANDRD_EVENT' is set to one of
 
 ----
-DISPLAYNAME [connected|disconnected|unknown]
+[connected|disconnected|unknown]
 ----
 
-Furthermore, the environment variable 'SRANDRD_EDID' is set (if available) which
-is of the format
+Furthermore, the environment variable 'SRANDRD_EDID' is set (if
+available) which is of the format
 
 ----
 VENDOR[4]PRODUCT[4]SERIAL[8]
 ----
 
-Finally, the environment variable 'SRANDRD_SCREENID' is set (if available) which
-is of the format
+Finally, the environment variable 'SRANDRD_SCREENID' is set (if
+available) which is of the format
 
 ----
 XINERAMA_SCREENID[1|2]
@@ -67,7 +70,7 @@ where display_handler being the following script
 ----
 #!/bin/sh
 
-case "$SRANDRD_ACTION" in
+case "$S{RANDRD_OUTPUT} ${SRANDRD_EVENT}" in
   "DVI-0 connected") xrandr --output DVI-0 --auto --right-of LVDS;;
   "VGA-0 connected") xrandr --output VGA-0 --auto --left-of LVDS;;
 esac
