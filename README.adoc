@@ -34,27 +34,31 @@ srandrd(1) is a tool that executes a command on xrandr output change
 events, i.e. if a monitor is plugged or unplugged. By default srandrd
 forks to background and exits if the xserver exits.
 
-In the child's environment the variable 'SRANDRD_OUTPUT' is
-set to the name graphics card output that triggered the event.
+The following variables are defined:
 
-The variable 'SRANDRD_EVENT' is set to one of
+'SRANDRD_OUTPUT' defines the name of the graphics card output / port
+that triggered the event, e.g. 'DVI-0'.
+
+'SRANDRD_EVENT' defines the event that happened.  It's one of the
+following:
 
 ----
 [connected|disconnected|unknown]
 ----
 
-Furthermore, the environment variable 'SRANDRD_EDID' is set (if
-available) which is of the format
+'SRANDRD_EDID' defines a semi-unique identifier of the monitor that has
+been connected.  The identifier is usually not unique (the same) within
+a monitor series.  The identifier has this format:
 
 ----
 VENDOR[4]PRODUCT[4]SERIAL[8]
 ----
 
-Finally, the environment variable 'SRANDRD_SCREENID' is set (if
-available) which is of the format
+'SRANDRD_SCREENID' defines the xinerama screen id (if available).  The
+identifier has this format:
 
 ----
-XINERAMA_SCREENID[1|2]
+XINERAMA_SCREENID[1..n]
 ----
 
 == EXAMPLE

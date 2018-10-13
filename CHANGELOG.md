@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [UNRELEASED]
 ### Added
+- Explain the content of the environment variables
 - Implement list command to list outputs and EDIDs
 
 ### Changed

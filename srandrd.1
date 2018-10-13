@@ -2,12 +2,12 @@
 .\"     Title: srandrd
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10/03/2018
+.\"      Date: 10/13/2018
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "SRANDRD" "1" "10/03/2018" "\ \&" "\ \&"
+.TH "SRANDRD" "1" "10/13/2018" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -67,9 +67,11 @@ Emit connected devices at startup
 .sp
 srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&.
 .sp
-In the child\(cqs environment the variable \fISRANDRD_OUTPUT\fR is set to the name graphics card output that triggered the event\&.
+The following variables are defined:
 .sp
-The variable \fISRANDRD_EVENT\fR is set to one of
+\fISRANDRD_OUTPUT\fR defines the name of the graphics card output / port that triggered the event, e\&.g\&. \fIDVI\-0\fR\&.
+.sp
+\fISRANDRD_EVENT\fR defines the event that happened\&. It\(cqs one of the following:
 .sp
 .if n \{\
 .RS 4
@@ -81,7 +83,7 @@ The variable \fISRANDRD_EVENT\fR is set to one of
 .RE
 .\}
 .sp
-Furthermore, the environment variable \fISRANDRD_EDID\fR is set (if available) which is of the format
+\fISRANDRD_EDID\fR defines a semi\-unique identifier of the monitor that has been connected\&. The identifier is usually not unique (the same) within a monitor series\&. The identifier has this format:
 .sp
 .if n \{\
 .RS 4
@@ -93,13 +95,13 @@ VENDOR[4]PRODUCT[4]SERIAL[8]
 .RE
 .\}
 .sp
-Finally, the environment variable \fISRANDRD_SCREENID\fR is set (if available) which is of the format
+\fISRANDRD_SCREENID\fR defines the xinerama screen id (if available)\&. The identifier has this format:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-XINERAMA_SCREENID[1|2]
+XINERAMA_SCREENID[1\&.\&.n]
 .fi
 .if n \{\
 .RE
