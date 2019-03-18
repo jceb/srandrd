@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Implement list command to list outputs and EDIDs
 
 ### Changed
+- Cache and send EDID and XINERAMA_SCREENID on disconnect
 - Separate `SRANDRD_ACTION` into `SRANDRD_OUTPUT` and `SRANDRD_EVENT`
 
 ### Fixed
