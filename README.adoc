@@ -74,7 +74,7 @@ where display_handler being the following script
 ----
 #!/bin/sh
 
-case "$S{RANDRD_OUTPUT} ${SRANDRD_EVENT}" in
+case "${SRANDRD_OUTPUT} ${SRANDRD_EVENT}" in
   "DVI-0 connected") xrandr --output DVI-0 --auto --right-of LVDS;;
   "VGA-0 connected") xrandr --output VGA-0 --auto --left-of LVDS;;
 esac
