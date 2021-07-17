@@ -1,28 +1,71 @@
 /* See LICENSE for copyright and license details
  * srandrd - simple randr daemon
  */
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/extensions/Xinerama.h>
 
 #define OCNE(X) ((XRROutputChangeNotifyEvent*)X)
-#define ACTION_SIZE 128
+#define EVENT_SIZE 128
 #define EDID_SIZE 17
 #define SCREENID_SIZE 3
 
-char *CON_ACTIONS[] = { "connected", "disconnected", "unknown" };
+typedef struct OutputConnection OutputConnection;
+
+struct OutputConnection
+{
+	RROutput output;
+	int sid;
+	char *edid;
+	int edidlen;
+	OutputConnection *next;
+};
+
+char *CON_EVENTS[] = { "connected", "disconnected", "unknown" };
+
+OutputConnection *CONNECTIONS = 0;
 
 char **ARGV;
 int ARGS;
+
+OutputConnection *cache_connection(OutputConnection * head, RROutput output, char *edid, int edidlen, int sid);
+static void xerror(const char *format, ...);
+static int error_handler(void);
+static void catch_child(int sig);
+static void help(int status);
+static void version(void);
+int get_screenid(Display * dpy, RROutput output);
+int get_edid(Display * dpy, RROutput out, char *edid, int edidlen);
+int iter_crtcs(Display * dpy, void (*f) (Display *, char *, char *, int));
+void print_crtc(Display * dpy, char *name, char *edid, int sid);
+pid_t emit(Display * dpy, char *output, char *event, char *edid, char *screenid);
+void emit_crtc(Display * dpy, char *name, char *edid, int sid);
+void free_output_connection(OutputConnection * ocon);
+OutputConnection * get_output_connection(OutputConnection * ocon, RROutput output);
+OutputConnection * remove_output_connection(OutputConnection * ocon, RROutput output);
+OutputConnection * add_output_connection(OutputConnection * head, OutputConnection * ocon);
+void die_if_null(void *ptr);
+OutputConnection * cache_connection(OutputConnection * head, RROutput output, char *edid, int edidlen, int sid);
+int process_events(Display * dpy, int verbose);
+int main(int argc, char **argv);
+
+void
+die_if_null(void *ptr)
+{
+	if (!ptr) {
+		fprintf(stderr, "Malloc failed.");
+		error_handler();
+	}
+}
 
 static void
 xerror(const char *format, ...)
@@ -44,7 +87,9 @@ static void
 catch_child(int sig)
 {
 	(void) sig;
-	while (waitpid(-1, NULL, WNOHANG) > 0);
+	while (waitpid(-1, NULL, WNOHANG) > 0) {
+		;
+	}
 }
 
 static void
@@ -72,12 +117,12 @@ version(void)
 }
 
 int
-get_screenid(Display * dpy, RROutput output)
+get_sid(Display * dpy, RROutput output)
 {
 	XRRMonitorInfo *mi;
 	XRRScreenResources *sr;
 	XineramaScreenInfo *si;
-	int i, j, k, screenid = -1;
+	int i, j, k, sid = -1;
 	int nmonitors, nscreens;
 
 	si = XineramaQueryScreens(dpy, &nscreens);
@@ -85,16 +130,19 @@ get_screenid(Display * dpy, RROutput output)
 	sr = XRRGetScreenResourcesCurrent(dpy, DefaultRootWindow(dpy));
 
 	for (j = 0; j < nmonitors; ++j) {
-		for (k = 0; k < mi[j].noutput && mi[j].outputs[k] != output; ++k);
-		if (k < mi[j].noutput)
+		for (k = 0; k < mi[j].noutput && mi[j].outputs[k] != output; ++k) {
+			;
+		}
+		if (k < mi[j].noutput) {
 			break;
+		}
 	}
 
 	if (si && mi && j < nmonitors) {
 		for (i = 0; i < nscreens; ++i) {
 			if (si[i].x_org == mi[j].x &&
 				si[i].y_org == mi[j].y && si[i].width == mi[j].width && si[i].height == mi[j].height) {
-				screenid = i;
+				sid = i;
 				break;
 			}
 		}
@@ -103,13 +151,13 @@ get_screenid(Display * dpy, RROutput output)
 	}
 	XRRFreeScreenResources(sr);
 
-	return screenid;
+	return sid;
 }
 
 int
 get_edid(Display * dpy, RROutput out, char *edid, int edidlen)
 {
-	int props = 0, res = 0;
+	int props = 0, len = 0;
 	Atom *properties;
 	Atom atom_edid, real;
 	int i, format;
@@ -119,10 +167,12 @@ get_edid(Display * dpy, RROutput out, char *edid, int edidlen)
 	unsigned long n, extra;
 	Bool has_edid_prop = False;
 
-	if (edidlen)
+	if (edidlen) {
 		edid[0] = 0;
-	else
-		return res;
+	}
+	else {
+		return len;
+	}
 	properties = XRRListOutputProperties(dpy, out, &props);
 	atom_edid = XInternAtom(dpy, RR_PROPERTY_RANDR_EDID, False);
 	for (i = 0; i < props; i++) {
@@ -141,12 +191,12 @@ get_edid(Display * dpy, RROutput out, char *edid, int edidlen)
 				product = (p[11] << 8) | p[10];
 				serial = p[15] << 24 | p[14] << 16 | p[13] << 8 | p[12];
 				snprintf(edid, edidlen, "%04X%04X%08X", vendor, product, serial);
-				res = EDID_SIZE;
+				len = EDID_SIZE;
 			}
 			free(p);
 		}
 	}
-	return res;
+	return len;
 }
 
 int
@@ -157,7 +207,7 @@ iter_crtcs(Display * dpy, void (*f) (Display *, char *, char *, int))
 	XineramaScreenInfo *si;
 	XRROutputInfo *info;
 	char edid[EDID_SIZE];
-	int i, j, k, nmonitors, nscreens, sid = -1;
+	int i, j, k, edidlen, nmonitors, nscreens, sid = -1;
 
 	si = XineramaQueryScreens(dpy, &nscreens);
 	mi = XRRGetMonitors(dpy, DefaultRootWindow(dpy), True, &nmonitors);
@@ -166,18 +216,19 @@ iter_crtcs(Display * dpy, void (*f) (Display *, char *, char *, int))
 		for (i = 0; i < nscreens; ++i) {
 			for (j = 0; j < nmonitors; ++j) {
 				for (k = 0; k < mi[j].noutput; ++k) {
-					sid = get_screenid(dpy, mi[j].outputs[k]);
-					if (i != sid)
+					sid = get_sid(dpy, mi[j].outputs[k]);
+					if (i != sid) {
 						continue;
-
+					}
 					info = XRRGetOutputInfo(dpy, sr, mi[j].outputs[k]);
-					get_edid(dpy, mi[j].outputs[k], edid, EDID_SIZE);
+					edidlen = get_edid(dpy, mi[j].outputs[k], edid, EDID_SIZE);
+					CONNECTIONS = cache_connection(CONNECTIONS, mi[j].outputs[k], edid, edidlen, sid);
 					f(dpy, info->name, edid, sid);
 					XRRFreeOutputInfo(info);
-
 				}
-				if (i == sid)
+				if (i == sid) {
 					break;
+				}
 			}
 		}
 		XFree(si);
@@ -194,16 +245,18 @@ print_crtc(Display * dpy, char *name, char *edid, int sid)
 }
 
 pid_t
-emit(Display * dpy, char *action, char *edid, char *screenid)
+emit(Display * dpy, char *output, char *event, char *edid, char *screenid)
 {
 	pid_t pid;
 	if ((pid = fork()) == 0) {
-		if (dpy)
+		if (dpy) {
 			close(ConnectionNumber(dpy));
+		}
 		setsid();
-		setenv("SRANDRD_ACTION", action, False);
-		setenv("SRANDRD_EDID", edid, False);
-		setenv("SRANDRD_SCREENID", screenid, False);
+		setenv("SRANDRD_OUTPUT", output, True);
+		setenv("SRANDRD_EVENT", event, True);
+		setenv("SRANDRD_EDID", edid, True);
+		setenv("SRANDRD_SCREENID", screenid, True);
 		execvp(ARGV[ARGS], &(ARGV[ARGS]));
 	}
 	return waitpid(pid, NULL, 0);
@@ -212,12 +265,82 @@ emit(Display * dpy, char *action, char *edid, char *screenid)
 void
 emit_crtc(Display * dpy, char *name, char *edid, int sid)
 {
-	char screenid[SCREENID_SIZE], action[ACTION_SIZE];
+	char screenid[SCREENID_SIZE];
 	screenid[0] = 0;
-	snprintf(action, ACTION_SIZE, "%s %s", name, CON_ACTIONS[0]);
-	if (sid != -1)
+	if (sid != -1) {
 		snprintf(screenid, SCREENID_SIZE, "%d", sid);
-	emit(dpy, action, edid, screenid);
+	}
+	emit(dpy, name, CON_EVENTS[0], edid, screenid);
+}
+
+void
+free_output_connection(OutputConnection * ocon)
+{
+	if (ocon) {
+		free(ocon->edid);
+		free(ocon);
+	}
+}
+
+OutputConnection *
+get_output_connection(OutputConnection * ocon, RROutput output)
+{
+	OutputConnection *_ocon = ocon;
+	for (; _ocon && _ocon->output != output; _ocon = _ocon->next);
+	return _ocon;
+}
+
+OutputConnection *
+remove_output_connection(OutputConnection * ocon, RROutput output)
+{
+	OutputConnection *_ocon = ocon;
+	if (_ocon && _ocon->output == output) {
+		OutputConnection *next = _ocon->next;
+		free_output_connection(_ocon);
+		return next;
+	}
+	for (; _ocon && _ocon->next && _ocon->next->output != output; _ocon = _ocon->next);
+	if (_ocon && _ocon->next && _ocon->next->output == output) {
+		OutputConnection *old_ocon = _ocon->next;
+		_ocon->next = _ocon->next->next;
+		free_output_connection(old_ocon);
+	}
+	return ocon;
+}
+
+OutputConnection *
+add_output_connection(OutputConnection * head, OutputConnection * ocon)
+{
+	OutputConnection *_ocon = head;
+	if (!ocon) {
+		return head;
+	}
+	if (!head) {
+		return ocon;
+	}
+	for (; _ocon && _ocon->next; _ocon = _ocon->next);
+	_ocon->next = ocon;
+	return head;
+}
+
+OutputConnection *
+cache_connection(OutputConnection * head, RROutput output, char *edid, int edidlen, int sid)
+{
+	OutputConnection *ocon = malloc(sizeof(OutputConnection));
+	die_if_null(ocon);
+	memset(ocon, 0, sizeof(OutputConnection));
+	ocon->output = output;
+
+	ocon->edid = malloc(sizeof(char) * EDID_SIZE);
+	memset(ocon->edid, 0, EDID_SIZE);
+	die_if_null(ocon->edid);
+
+	ocon->edidlen = edidlen;
+	strncpy(ocon->edid, edid, edidlen);
+
+	ocon->sid = sid;
+
+	return add_output_connection(head, ocon);
 }
 
 int
@@ -226,15 +349,19 @@ process_events(Display * dpy, int verbose)
 	XRRScreenResources *sr;
 	XRROutputInfo *info;
 	XEvent ev;
-	char action[ACTION_SIZE], edid[EDID_SIZE], screenid[SCREENID_SIZE];
+	char edid[EDID_SIZE], screenid[SCREENID_SIZE];
 	int i, edidlen;
 
 	XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
 	XSync(dpy, False);
 	XSetIOErrorHandler((XIOErrorHandler) error_handler);
 	while (1) {
-		screenid[0] = 0;
 		if (!XNextEvent(dpy, &ev)) {
+			i = -1;
+			edidlen = 0;
+			memset(edid, 0, EDID_SIZE);
+			memset(screenid, 0, SCREENID_SIZE);
+
 			sr = XRRGetScreenResources(OCNE(&ev)->display, OCNE(&ev)->window);
 			if (sr == NULL) {
 				fprintf(stderr, "Could not get screen resources\n");
@@ -248,16 +375,27 @@ process_events(Display * dpy, int verbose)
 				continue;
 			}
 
-			edidlen = get_edid(OCNE(&ev)->display, OCNE(&ev)->output, edid, EDID_SIZE);
-
-			i = get_screenid(OCNE(&ev)->display, OCNE(&ev)->output);
-			if (i != -1)
+			if (strncmp(CON_EVENTS[info->connection], "disconnected", 12) == 0) {
+				/* retrieve edid and screen information from cache */
+				OutputConnection *ocon = get_output_connection(CONNECTIONS, OCNE(&ev)->output);
+				if (ocon) {
+					i = ocon->sid;
+					edidlen = ocon->edidlen;
+					strncpy(edid, ocon->edid, edidlen);
+					CONNECTIONS = remove_output_connection(CONNECTIONS, OCNE(&ev)->output);
+				}
+			}
+			else {
+				edidlen = get_edid(OCNE(&ev)->display, OCNE(&ev)->output, edid, EDID_SIZE);
+				i = get_sid(OCNE(&ev)->display, OCNE(&ev)->output);
+				CONNECTIONS = cache_connection(CONNECTIONS, OCNE(&ev)->output, edid, edidlen, i);
+			}
+			if (i != -1) {
 				snprintf(screenid, SCREENID_SIZE, "%d", i);
-
-			snprintf(action, ACTION_SIZE, "%s %s", info->name, CON_ACTIONS[info->connection]);
+			}
 
 			if (verbose) {
-				printf("Event: %s %s\n", info->name, CON_ACTIONS[info->connection]);
+				printf("Event: %s %s\n", info->name, CON_EVENTS[info->connection]);
 				printf("Time: %lu\n", info->timestamp);
 				if (info->crtc == 0) {
 					printf("Size: %lumm x %lumm\n", info->mm_width, info->mm_height);
@@ -277,7 +415,7 @@ process_events(Display * dpy, int verbose)
 					printf("EDID (vendor, product, serial): not available\n");
 				}
 			}
-			emit(dpy, action, edid, screenid);
+			emit(dpy, info->name, CON_EVENTS[info->connection], edid, screenid);
 			XRRFreeScreenResources(sr);
 			XRRFreeOutputInfo(info);
 		}
@@ -293,8 +431,9 @@ main(int argc, char **argv)
 	int rv = 0;
 	uid_t uid;
 
-	if (argc < 2)
+	if (argc < 2) {
 		help(EXIT_FAILURE);
+	}
 
 	for (args = 1; args < argc && *(argv[args]) == '-'; args++) {
 		switch (argv[args][1]) {
@@ -319,20 +458,25 @@ main(int argc, char **argv)
 			help(EXIT_FAILURE);
 		}
 	}
-	if (argv[args] == NULL)
+	if (argv[args] == NULL) {
 		help(EXIT_FAILURE);
+	}
 
-	if (strncmp("list", argv[args], 5) == 0)
+	if (strncmp("list", argv[args], 5) == 0) {
 		list = 1;
+	}
 
-	if (((uid = getuid()) == 0) || uid != geteuid())
-		xerror("%s may not run as root\n", NAME);
+	if (((uid = getuid()) == 0) || uid != geteuid()) {
+		xerror("This program may not run as root\n");
+	}
 
-	if ((dpy = XOpenDisplay(NULL)) == NULL)
-		xerror("%s cannot open display\n", NAME);
+	if ((dpy = XOpenDisplay(NULL)) == NULL) {
+		xerror("Cannot open display\n");
+	}
 
-	if (list)
+	if (list) {
 		return iter_crtcs(dpy, &print_crtc);
+	}
 
 	if (daemonize) {
 		switch (fork()) {
@@ -360,3 +504,6 @@ main(int argc, char **argv)
 		rv = process_events(dpy, verbose);
 	return rv;
 }
+
+/* vi: ft=c:tw=80:sw=4:ts=4:sts=4:noet
+ */
