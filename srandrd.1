@@ -63,6 +63,12 @@ Verbose output
 .RS 4
 Emit connected devices at startup
 .RE
+.PP
+\fB\-1\fR
+.RS 4
+One\-shot mode; exit after emitting connected devices (implies
+\fB\-e\fR)
+.RE
 .SH "DESCRIPTION"
 .sp
 srandrd(1) is a tool that executes a command on xrandr output change events, i\&.e\&. if a monitor is plugged or unplugged\&. By default srandrd forks to background and exits if the xserver exits\&.

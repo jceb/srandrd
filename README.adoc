@@ -27,6 +27,8 @@ srandrd - simple randr daemon
     Verbose output
 *-e*::
     Emit connected devices at startup
+*-1*::
+    One-shot mode; exit after emitting connected devices (implies *-e*)
 
 == DESCRIPTION
 

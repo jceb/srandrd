@@ -55,7 +55,7 @@ OutputConnection * remove_output_connection(OutputConnection * ocon, RROutput ou
 OutputConnection * add_output_connection(OutputConnection * head, OutputConnection * ocon);
 void die_if_null(void *ptr);
 OutputConnection * cache_connection(OutputConnection * head, RROutput output, char *edid, int edidlen, int sid);
-int process_events(Display * dpy, int verbose, int emit_startup);
+int process_events(Display * dpy, int verbose);
 int main(int argc, char **argv);
 
 void
@@ -101,7 +101,9 @@ help(int status)
 			"   -h  Print this help and exit\n"
 			"   -n  Don't fork to background\n"
 			"   -V  Print version information and exit\n"
-			"   -v  Verbose output\n" "   -e  Emit connected devices at startup\n");
+			"   -v  Verbose output\n"
+			"   -e  Emit connected devices at startup\n"
+			"   -1  One-shot mode (emit devices and exit)\n");
 	exit(status);
 }
 
@@ -342,17 +344,13 @@ cache_connection(OutputConnection * head, RROutput output, char *edid, int edidl
 }
 
 int
-process_events(Display * dpy, int verbose, int emit_startup)
+process_events(Display * dpy, int verbose)
 {
 	XRRScreenResources *sr;
 	XRROutputInfo *info;
 	XEvent ev;
 	char edid[EDID_SIZE], screenid[SCREENID_SIZE];
 	int i, edidlen;
-
-	if (emit_startup) {
-		iter_crtcs(dpy, &emit_crtc);
-	}
 
 	XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
 	XSync(dpy, False);
@@ -429,7 +427,8 @@ int
 main(int argc, char **argv)
 {
 	Display *dpy;
-	int daemonize = 1, args = 1, verbose = 0, emit = 0, list = 0;
+	int daemonize = 1, args = 1, verbose = 0, emit = 0, list = 0, oneshot = 0;
+	int rv = 0;
 	uid_t uid;
 
 	if (argc < 2) {
@@ -446,6 +445,9 @@ main(int argc, char **argv)
 		case 'v':
 			verbose++;
 			break;
+		case '1':
+			oneshot++;
+			/* fallthrough: oneshot implies emit */
 		case 'e':
 			emit++;
 			break;
@@ -496,7 +498,11 @@ main(int argc, char **argv)
 	ARGV = argv;
 	ARGS = args;
 
-	return process_events(dpy, verbose, emit);
+	if (emit)
+		rv = iter_crtcs(dpy, &emit_crtc);
+	if (!oneshot)
+		rv = process_events(dpy, verbose);
+	return rv;
 }
 
 /* vi: ft=c:tw=80:sw=4:ts=4:sts=4:noet
