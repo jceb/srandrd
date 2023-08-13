@@ -226,9 +226,11 @@ iter_crtcs(Display * dpy, void (*f) (Display *, char *, char *, int))
 					f(dpy, info->name, edid, sid);
 					XRRFreeOutputInfo(info);
 				}
-				if (i == sid) {
-					break;
-				}
+				/* INFO: apparently this causes a number of displays to not be
+				 * listed, see https://github.com/jceb/srandrd/issues/10 */
+				// if (i == sid) {
+				// 	break;
+				// }
 			}
 		}
 		XFree(si);
